@@ -58,7 +58,7 @@
 #if defined(STACK_USE_HTTP2_SERVER)
 
 #include "TCPIP Stack/TCPIP.h"
-#include "MainDemo.h"		// Needed for SaveAppConfig() prototype
+#include "Main.h"		// Needed for SaveAppConfig() prototype
 
 /****************************************************************************
   Section:

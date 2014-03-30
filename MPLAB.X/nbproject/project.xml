@@ -7,7 +7,7 @@
             <c-extensions>c</c-extensions>
             <cpp-extensions/>
             <header-extensions>h</header-extensions>
-            <sourceEncoding>UTF-8</sourceEncoding>
+            <sourceEncoding>KOI8-R</sourceEncoding>
             <asminc-extensions/>
             <make-dep-projects/>
         </data>

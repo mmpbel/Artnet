@@ -7,7 +7,7 @@
 
  *
  *********************************************************************
- * FileName:        MainDemo.c
+ * FileName:        Main.c
  * Dependencies:    TCPIP.h
  * Processor:       PIC18, PIC24F, PIC24H, dsPIC30F, dsPIC33F, PIC32
  * Compiler:        Microchip C32 v1.11b or higher
@@ -27,7 +27,7 @@
 #include "TCPIP Stack/TCPIP.h"
 
 // Include functions specific to this stack application
-#include "MainDemo.h"
+#include "Main.h"
 
 // Declare AppConfig structure and some other supporting stack variables
 APP_CONFIG AppConfig;
@@ -106,25 +106,14 @@ int main(void)
         // the inputs on the board itself.
         // Any custom modules or processing you need to do should
         // go here.
-        #if defined(STACK_USE_GENERIC_TCP_CLIENT_EXAMPLE)
-        GenericTCPClient();
-        #endif
-        
-        #if defined(STACK_USE_GENERIC_TCP_SERVER_EXAMPLE)
-        GenericTCPServer();
-        #endif
         
         #if defined(STACK_USE_ICMP_CLIENT)
-        PingDemo();
-        #endif
-
-        #if defined(STACK_USE_BERKELEY_API)
-        BerkeleyTCPClientDemo();
-        BerkeleyTCPServerDemo();
-        BerkeleyUDPClientDemo();
+        PING_Task();
         #endif
 
         ProcessIO();
+
+        ART_Task();
 
         // If the local IP address has changed (ex: due to DHCP lease change)
         // write the new IP address to the LCD display, UART, and Announce 

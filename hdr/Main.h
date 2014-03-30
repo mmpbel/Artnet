@@ -1,14 +1,14 @@
 /*********************************************************************
  *
- *	Microchip TCP/IP Stack Demo Application Configuration Header Stub
+ *                  Headers for TCPIP Demo App
  *
  *********************************************************************
- * FileName:        TCPIPConfig.h
- * Dependencies:    Microchip TCP/IP Stack
+ * FileName:        MainDemo.h
+ * Dependencies:    Compiler.h
  * Processor:       PIC18, PIC24F, PIC24H, dsPIC30F, dsPIC33F, PIC32
- * Compiler:        Microchip C32 v1.10 or higher
+ * Compiler:        Microchip C32 v1.05 or higher
  *					Microchip C30 v3.12 or higher
- *					Microchip C18 v3.34 or higher 
+ *					Microchip C18 v3.30 or higher
  *					HI-TECH PICC-18 PRO 9.63PL2 or higher
  * Company:         Microchip Technology, Inc.
  *
@@ -44,20 +44,33 @@
  * (INCLUDING NEGLIGENCE), BREACH OF WARRANTY, OR OTHERWISE.
  *
  *
- * Author               Date        Comment
+ * Author               Date    Comment
  *~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
- * Howard Schlunder		09/21/2010	Converted to a stub
+ * E. Wood				4/26/08 Copied from MainDemo.c
  ********************************************************************/
-#ifndef TCPIPCONFIG_STUB_H
-#define TCPIPCONFIG_STUB_H
+#ifndef _MAINDEMO_H
+#define _MAINDEMO_H
 
-// These definitions are set in the MPLAB Project settings.  If you are starting
-// a new project, you should start by modifying one of the pre-existing .mcp 
-// files.  To modify the macro used, in MPLAB IDE, click on Project -> Build 
-// Options... -> Project -> MPLAB XXX C Compiler -> Preprocessor Macros -> 
-// Add.... Note that you may also have to add this macro to the assembler 
-// (MPLAB XXX Assembler tab).
+#define strVersion "v0.0 ArtNet2Dmx"
+#define FW_RELEASE_NUM  0x0100
+#define OEM_CODE        (('G'<<8) | 'V')
+#define ESTA_MANUF_CODE (('G'<<8) | 'V')
 
-#include "Configs/TCPIP ETH795.h"
+#define BAUD_RATE       (19200)		// bps
 
-#endif
+#define SaveAppConfig(a)
+
+void PING_Task(void);
+void ART_Task(void);
+
+
+// Define a header structure for validating the AppConfig data structure in EEPROM/Flash
+typedef struct
+{
+	unsigned short wConfigurationLength;	// Number of bytes saved in EEPROM/Flash (sizeof(APP_CONFIG))
+	unsigned short wOriginalChecksum;		// Checksum of the original AppConfig defaults as loaded from ROM (to detect when to wipe the EEPROM/Flash record of AppConfig due to a stack change, such as when switching from Ethernet to Wi-Fi)
+	unsigned short wCurrentChecksum;		// Checksum of the current EEPROM/Flash data.  This protects against using corrupt values if power failure occurs while writing them and helps detect coding errors in which some other task writes to the EEPROM in the AppConfig area.
+} NVM_VALIDATION_STRUCT;
+
+
+#endif // _MAINDEMO_H
