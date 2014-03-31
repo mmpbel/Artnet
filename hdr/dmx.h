@@ -12,6 +12,8 @@
 extern "C" {
 #endif
 
+#ifdef _DMX_CODE
+
 enum
 {
     DMX_IDLE_STATE=0,   // no DMX data received yet
@@ -26,28 +28,31 @@ enum
     DMX_ALL_STATE,
 };
 
-#ifdef _DMX_CLIENT
-   #define MAX_DMX_SLOTS    512
-#else // #ifdef _DMX_CLIENT
-   #define MAX_DMX_SLOTS    10 //64     // 512
-#endif // #ifdef _DMX_CLIENT
-
 #define DMX_START_CODE   0
 #define DMX_GVA_CODE     'G'
 
 #define DMX_RETRANSMIT_TIME_MS    1000
 
-#define DMX_MBB_TIME      100 // DMX mark before break time in us - 0 us..1 sec
-#define DMX_BREAK_TIME    176 // DMX break time in us - 88 us..1 sec
-#define DMX_MAB_TIME      12  // DMX mark after break time in us - 8 us..1 sec
+#define DMX_MBB_TIME      (100 * GetSystemClockMHz()) // DMX mark before break time in us - 0 us..1 sec
+#define DMX_BREAK_TIME    (176 * GetSystemClockMHz()) // DMX break time in us - 88 us..1 sec
+#define DMX_MAB_TIME      (12 * GetSystemClockMHz())  // DMX mark after break time in us - 8 us..1 sec
 
-#define DMX_RX_TIMEOUT    75  // DMX byte RX timeout ms - 0 us..1 sec
+#define DMX_RX_TIMEOUT    (75000 * GetSystemClockMHz())  // DMX byte RX timeout us - 0 us..1 sec
+
 #ifdef _DMX_CLIENT
 #define DMX_MIN_RX_SIZE       5     // min number of bytes in DMX reply
 #define DMX_MAX_RX_SIZE       17    // max number of bytes in DMX reply
 #else // #ifdef _DMX_CLIENT
 #define DMX_MIN_RX_SIZE       2     // min number of bytes in DMX reply
 #define DMX_MAX_RX_SIZE       (MAX_DMX_SLOTS+1)    // max number of bytes in DMX reply
+#endif // #ifdef _DMX_CLIENT
+
+#endif // #ifdef _DMX_CODE
+
+#ifdef _DMX_CLIENT
+   #define MAX_DMX_SLOTS    512
+#else // #ifdef _DMX_CLIENT
+   #define MAX_DMX_SLOTS    10 //64     // 512
 #endif // #ifdef _DMX_CLIENT
 
 #define MAX_TX_SIZE       17    // max number of bytes in DMX request
@@ -107,8 +112,17 @@ typedef struct _GVAcmd_t
     } u;
 } GVAcmd_t;
 
-void GVA_init(void);
-void GVA_handleCmd(GVAcmd_t *cmd);
+extern void GVA_init(void);
+extern void GVA_handleCmd(GVAcmd_t *cmd);
+
+extern void DMX_sendAnswer(UINT8 *buf, UINT16 size);
+extern void DMX_stopTransfer(void);
+extern void DMX_RX_ISR(void);
+extern void DMX_TX_ISR(void);
+extern void DMX_sendRdm(UINT8 *buf, UINT16 size);
+extern UINT8 DMX_getChannel(UINT16 netAddr);
+extern UINT8 * DMX_getBuf(void);
+extern void DMX_activateChannel(void);
 
 #ifdef        __cplusplus
 }

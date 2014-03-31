@@ -66,6 +66,7 @@
 // Clock frequency values
 // These directly influence timed events using the Tick module.  They also are used for UART and SPI baud rate generation.
 #define GetSystemClock()		(80000000ul)			// Hz
+#define GetSystemClockMHz()		(GetSystemClock()/1000000)	// MHz
 #define GetInstructionClock()	(GetSystemClock()/1)	// Normally GetSystemClock()/4 for PIC18, GetSystemClock()/2 for PIC24/dsPIC, and GetSystemClock()/1 for PIC32.  Might need changing if using Doze modes.
 #define GetPeripheralClock()	(GetSystemClock()/1)	// Normally GetSystemClock()/4 for PIC18, GetSystemClock()/2 for PIC24/dsPIC, and GetSystemClock()/1 for PIC32.  Divisor may be different if using a PIC32 since it's configurable.
 

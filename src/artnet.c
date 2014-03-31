@@ -18,7 +18,11 @@
 #include "TCPIP Stack/TCPIP.h"
 
 #include "dmx.h"
+
+#define _ARTNET_CODE
 #include "artnet.h"
+#undef _ARTNET_CODE
+
 
 extern NODE_INFO remoteNode;
 

@@ -8,6 +8,8 @@
 #ifndef ARTNET_H
 #define ARTNET_H
 
+#ifdef _ARTNET_CODE
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -53,7 +55,7 @@ enum
     OpOutput=0x5000,    // This is an ArtDmx data packet. It contains zero start code DMX512 information for a single Universe.
     OpNzs=0x5100,       // This is an ArtNzs data packet. It contains non-zero start code (except RDM) DMX512 information for a single Universe.
     OpAddress=0x6000,       // This is an ArtAddress packet. It contains remote programming information for a Node.
-    OpInput=0x7000,         // This is an ArtInput packet. It contains enable – disable data for DMX inputs.
+    OpInput=0x7000,         // This is an ArtInput packet. It contains enable ? disable data for DMX inputs.
     OpTodRequest=(int)0x8000,    // This is an ArtTodRequest packet. It is used to request a Table of Devices (ToD) for RDM discovery.
     OpTodData=(int)0x8100,       // This is an ArtTodData packet. It is used to send a Table of Devices (ToD) for RDM discovery.
     OpTodControl=(int)0x8200,    // This is an ArtTodControl packet. It is used to send RDM discovery control messages.
@@ -62,7 +64,7 @@ enum
     OpVideoSetup=(int)0xa010,        // This is an ArtVideoSetup packet. It contains video screen setup information for nodes that implement the extended video features.
     OpVideoPalette=(int)0xa020,      // This is an ArtVideoPalette packet. It contains colour palette setup information for nodes that implement the extended video features.
     OpVideoData=(int)0xa040,         // This is an ArtVideoData packet. It contains display data for nodes that implement the extended video features.
-    OpMacMaster=(int)0xf000,         // This is an ArtMacMaster packet. It is used to program the Node’s MAC address, Oem device type and ESTA manufacturer code.
+    OpMacMaster=(int)0xf000,         // This is an ArtMacMaster packet. It is used to program the Node?s MAC address, Oem device type and ESTA manufacturer code.
                                     // This is for factory initialisation of a Node. It is not to be used by applications.
     OpMacSlave=(int)0xf100,          // This is an ArtMacSlave packet. It is returned by the node to acknowledge receipt of an ArtMacMaster packet.
     OpFirmwareMaster=(int)0xf200,    // This is an ArtFirmwareMaster packet. It is used to upload new firmware or firmware extensions to the Node.
@@ -122,11 +124,11 @@ typedef struct _ArtPollReplyPack_t
 {
     UINT8 ID[8];
     UINT16 OpCode;          // OpPollReply. Transmitted low byte first.
-    UINT8 IpAddress[4];     // Array containing the Node’s IP address. First array entry is most significant byte of address.
+    UINT8 IpAddress[4];     // Array containing the Node?s IP address. First array entry is most significant byte of address.
     UINT16 Port;            // The Port is always 0x1936. Transmitted low byte first.
-    UINT8 VersInfoH;        // High byte of Node’s firmware revision number. The Controller should only use this field to decide
+    UINT8 VersInfoH;        // High byte of Node?s firmware revision number. The Controller should only use this field to decide
                                 // if a firmware update should proceed. The convention is that a higher number is a more recent release of firmware.
-    UINT8 VersInfoL;        // Low byte of Node’s firmware revision number.
+    UINT8 VersInfoL;        // Low byte of Node?s firmware revision number.
     UINT8 NetSwitch;        // Bits 14-8 of the 15 bit Port-Address are encoded into the bottom 7 bits of this field.
                                 // This is used in combination with SubSwitch and SwIn[] or SwOut[] to produce the full universe address.
     UINT8 SubSwitch;        // Bits 7-4 of the 15 bit Port-Address are encoded into the bottom 4 bits of this field.
@@ -164,8 +166,8 @@ typedef struct _ArtPollReplyPack_t
     UINT8 LongName [64];    // The array represents a null terminated long name for the Node. The Controller uses the ArtAddress packet
                                 // to program this string. Max length is 63 characters plus the null. This is a fixed length field,
                                 // although the string it contains can be shorter than the field.
-    UINT8 NodeReport[64];   // The array is a textual report of the Node’s operating status or operational errors. It is primarily intended
-                                // for ‘engineering’ data rather than ‘end user’ data. The field is formatted as: “#xxxx [yyyy..] zzzzz…”
+    UINT8 NodeReport[64];   // The array is a textual report of the Node?s operating status or operational errors. It is primarily intended
+                                // for ?engineering? data rather than ?end user? data. The field is formatted as: ?#xxxx [yyyy..] zzzzz??
                                 // xxxx is a hex status code as defined in Table 3. yyyy is a decimal counter
                                 // that increments every time the Node sends an ArtPollResponse. This allows the controller to monitor event changes in the Node.
                                 // zzzz is an English text string defining the status.
@@ -187,54 +189,54 @@ typedef struct _ArtPollReplyPack_t
                                 //     00101 = Art-Net
     UINT8 GoodInput[4];     // This array defines input status of the node.
                                 // Bit:
-                                // 7 Set – Data received.
-                                // 6 Set – Channel includes DMX512 test packets.
-                                // 5 Set – Channel includes DMX512 SIP’s.
-                                // 4 Set – Channel includes DMX512 text packets.
-                                // 3 Set – Input is disabled.
-                                // 2 Set – Receive errors detected.
+                                // 7 Set ? Data received.
+                                // 6 Set ? Channel includes DMX512 test packets.
+                                // 5 Set ? Channel includes DMX512 SIP?s.
+                                // 4 Set ? Channel includes DMX512 text packets.
+                                // 3 Set ? Input is disabled.
+                                // 2 Set ? Receive errors detected.
                                 // 1-0 Unused and transmitted as zero.
     UINT8 GoodOutput[4];    // This array defines output status of the node.
                                 // Bit:
-                                // 7 Set – Data is being transmitted.
-                                // 6 Set – Channel includes DMX512 test packets.
-                                // 5 Set – Channel includes DMX512 SIP’s.
-                                // 4 Set – Channel includes DMX512 text packets.
-                                // 3 Set – Output is merging ArtNet data.
-                                // 2 Set – DMX output short detected on power up
-                                // 1 Set – Merge Mode is LTP.
+                                // 7 Set ? Data is being transmitted.
+                                // 6 Set ? Channel includes DMX512 test packets.
+                                // 5 Set ? Channel includes DMX512 SIP?s.
+                                // 4 Set ? Channel includes DMX512 text packets.
+                                // 3 Set ? Output is merging ArtNet data.
+                                // 2 Set ? DMX output short detected on power up
+                                // 1 Set ? Merge Mode is LTP.
                                 // 0 Unused and transmitted as zero.
     UINT8 SwIn[4];          // Bits 3-0 of the 15 bit Port-Address for each of the 4 possible input ports are encoded into the low nibble.
     UINT8 SwOut[4];         // Bits 3-0 of the 15 bit Port-Address for each of the 4 possible output ports are encoded into the low nibble.
     UINT8 SwVideo;          // Set to 00 when video display is showing local data. Set to 01 when video is showing ethernet data.
     UINT8 SwMacro;          // If the Node supports macro key inputs, this byte represents the trigger values.
-                                // The Node is responsible for ‘debouncing’ inputs. When the ArtPollReply is set to transmit automatically,
+                                // The Node is responsible for ?debouncing? inputs. When the ArtPollReply is set to transmit automatically,
                                 // (TalkToMe Bit 1), the ArtPollReply will be sent on both key down and key up events.
                                 // However, the Controller should not assume that only one bit position has changed.
                                 // The Macro inputs are used for remote event triggering or cueing. Bit fields are active high.
                                 // Bit:
-                                // 7 Set – Macro 8 active.
-                                // 6 Set – Macro 7 active.
-                                // 5 Set – Macro 6 active.
-                                // 4 Set – Macro 5 active.
-                                // 3 Set – Macro 4 active.
-                                // 2 Set – Macro 3 active.
-                                // 1 Set – Macro 2 active.
-                                // 0 Set – Macro 1 active.
+                                // 7 Set ? Macro 8 active.
+                                // 6 Set ? Macro 7 active.
+                                // 5 Set ? Macro 6 active.
+                                // 4 Set ? Macro 5 active.
+                                // 3 Set ? Macro 4 active.
+                                // 2 Set ? Macro 3 active.
+                                // 1 Set ? Macro 2 active.
+                                // 0 Set ? Macro 1 active.
     UINT8 SwRemote;         // If the Node supports remote trigger inputs, this byte represents the trigger values.
-                                // The Node is responsible for ‘debouncing’ inputs. When the ArtPollReply is set to transmit automatically,
+                                // The Node is responsible for ?debouncing? inputs. When the ArtPollReply is set to transmit automatically,
                                 // (TalkToMe Bit 1), the ArtPollReply will be sent on both key down and key up events.
                                 // However, the Controller should not assume that only one bit position has changed.
                                 // The Remote inputs are used for remote event triggering or cueing. Bit fields are active high.
                                 // Bit:
-                                // 7 Set – Remote 8 active.
-                                // 6 Set – Remote 7 active.
-                                // 5 Set – Remote 6 active.
-                                // 4 Set – Remote 5 active.
-                                // 3 Set – Remote 4 active.
-                                // 2 Set – Remote 3 active.
-                                // 1 Set – Remote 2 active.
-                                // 0 Set – Remote 1 active.
+                                // 7 Set ? Remote 8 active.
+                                // 6 Set ? Remote 7 active.
+                                // 5 Set ? Remote 6 active.
+                                // 4 Set ? Remote 5 active.
+                                // 3 Set ? Remote 4 active.
+                                // 2 Set ? Remote 3 active.
+                                // 1 Set ? Remote 2 active.
+                                // 0 Set ? Remote 1 active.
     UINT8 Spare1[3];        // Not used, set to zero
     UINT8 Style;            // The Style code defines the equipment style of the device.
     UINT8 MAC[6];           // MAC Address.  Hi Byte is sent first. Set to zero if node cannot supply this information.
@@ -243,8 +245,8 @@ typedef struct _ArtPollReplyPack_t
                                 // A lower number means closer to root device. A value of 1 means root device.
     UINT8 Status2;          // Bit:
                                 // 0 Set = Product supports web browser configuration.
-                                // 1 Clr = Node’s IP is manually configured.
-                                //   Set = Node’s IP is DHCP configured.
+                                // 1 Clr = Node?s IP is manually configured.
+                                //   Set = Node?s IP is DHCP configured.
                                 // 2 Clr = Node is not DHCP capable.
                                 //   Set = Node is DHCP capable.
                                 // 3 Clr = Node supports 8 bit Port-Address (Art-Net II).
@@ -255,7 +257,7 @@ typedef struct _ArtPollReplyPack_t
 
 typedef struct _ArtIpProgPack_t
 {
-    UINT8 ID[8];        // Array of 8 characters, the final character is a null termination. Value = ‘A’ ‘r’ ‘t’ ‘-‘ ‘N’ ‘e’ ‘t’ 0x00
+    UINT8 ID[8];        // Array of 8 characters, the final character is a null termination. Value = ?A? ?r? ?t? ?-? ?N? ?e? ?t? 0x00
     UINT16 OpCode;      // OpIpProg Transmitted low byte first.
     UINT8 ProtVerHi;    // High byte of the Art-Net protocol revision number.
     UINT8 ProtVerLo;    // Low byte of the Art-Net protocol revision number. Current value 14
@@ -281,13 +283,13 @@ typedef struct _ArtIpProgPack_t
     UINT8 ProgSmLo;
     UINT8 ProgPortHi;   // PortAddress to be programmed into Node if enabled by Command Field
     UINT8 ProgPortLo;
-    UINT8 Spare[8];     // Transmit as zero, receivers don’t test.
+    UINT8 Spare[8];     // Transmit as zero, receivers don?t test.
     
 } ArtIpProgPack_t;
 
 typedef struct _ArtIpProgReplyPack_t
 {
-    UINT8 ID[8];        // Array of 8 characters, the final character is a null termination. Value = ‘A’ ‘r’ ‘t’ ‘-‘ ‘N’ ‘e’ ‘t’ 0x00
+    UINT8 ID[8];        // Array of 8 characters, the final character is a null termination. Value = ?A? ?r? ?t? ?-? ?N? ?e? ?t? 0x00
     UINT16 OpCode;      // OpIpProgReply Transmitted low byte first.
     UINT8 ProtVerHi;    // High byte of the Art-Net protocol revision number.
     UINT8 ProtVerLo;    // Low byte of the Art-Net protocol revision number. (14)
@@ -306,14 +308,14 @@ typedef struct _ArtIpProgReplyPack_t
     UINT8 Status;       // Bit 7 0
                         // Bit 6 DHCP enabled.
                         // Bit 5-0 0
-    UINT8 Spare[7];     // Transmit as zero, receivers don’t test.
+    UINT8 Spare[7];     // Transmit as zero, receivers don?t test.
     
 } ArtIpProgReplyPack_t;
 
 
 typedef struct _ArtAddressPack_t
 {
-    UINT8 ID[8];        // Array of 8 characters, the final character is a null termination. Value = ‘A’ ‘r’ ‘t’ ‘-‘ ‘N’ ‘e’ ‘t’ 0x00
+    UINT8 ID[8];        // Array of 8 characters, the final character is a null termination. Value = ?A? ?r? ?t? ?-? ?N? ?e? ?t? 0x00
     UINT16 OpCode;      // OpAddress. Transmitted low byte first.
     UINT8  ProtVerHi;   // High byte of the Art-Net protocol revision number.
     UINT8 ProtVerLo;    // Low byte of the Art-Net protocol revision number. Current value 14
@@ -355,8 +357,8 @@ enum
     AcCancelMerge=0x01,     // If Node is currently in merge mode, cancel merge mode upon receipt of next ArtDmx packet.
     AcLedNormal=0x02,       // The front panel indicators of the Node operate normally.
     AcLedMute=0x03,         // The front panel indicators of the Node are disabled and switched off.
-    AcLedLocate=0x04,       // Rapid flashing of the Node’s front panel indicators. It is intended as an outlet locator for large installations.
-    AcResetRx=0x05,         // Flags Resets the Node’s Sip, Text, Test and data error flags. If an output short is being flagged, forces the test to rerun.
+    AcLedLocate=0x04,       // Rapid flashing of the Node?s front panel indicators. It is intended as an outlet locator for large installations.
+    AcResetRx=0x05,         // Flags Resets the Node?s Sip, Text, Test and data error flags. If an output short is being flagged, forces the test to rerun.
                             // Node configuration commands: Note that Ltp / Htp settings should be retained by the node during power cycling.
     AcMergeLtp0=0x10,       // Set DMX Port 0 to Merge in LTP mode.
     AcMergeLtp1=0x11,       // Set DMX Port 1 to Merge in LTP mode.
@@ -374,7 +376,7 @@ enum
 
 typedef struct _ArtDiagDataPack_t
 {
-    UINT8 ID[8];        // Array of 8 characters, the final character is a null termination. Value = ‘A’ ‘r’ ‘t’ ‘-‘ ‘N’ ‘e’ ‘t’ 0x00
+    UINT8 ID[8];        // Array of 8 characters, the final character is a null termination. Value = ?A? ?r? ?t? ?-? ?N? ?e? ?t? 0x00
     UINT16 OpCode;      // OpOutput Transmitted low byte first.
     UINT16 ProtVerHi;   // High byte of the Art-Net protocol revision number.
     UINT16 ProtVerLo;   // Low byte of the Art-Net protocol revision number. Current value 14
@@ -401,13 +403,13 @@ enum
 
 typedef struct _ArtTimeCodePack_t
 {
-    UINT8 ID[8];    // Array of 8 characters, the final character is a null termination. Value = ‘A’ ‘r’ ‘t’ ‘-‘ ‘N’ ‘e’ ‘t’ 0x00
+    UINT8 ID[8];    // Array of 8 characters, the final character is a null termination. Value = ?A? ?r? ?t? ?-? ?N? ?e? ?t? 0x00
     UINT16 OpCode;  // OpTimeCode. Transmitted low byte first.
     UINT8 ProtVerHi;    // High byte of the Art-Net protocol revision number.
     UINT8 ProtVerLo;    // Low byte of the Art-Net protocol revision number. Current value 14
     UINT8 Filler1;      // Ignore by receiver, set to zero by sender.
     UINT8 Filler2;      // Ignore by receiver, set to zero by sender.
-    UINT8 Frames;       // Frames time. 0 – 29 depending on mode.
+    UINT8 Frames;       // Frames time. 0 ? 29 depending on mode.
     UINT8 Seconds;      // Seconds. 0 - 59.
     UINT8 Minutes;      // Minutes. 0 - 59.
     UINT8 Hours;        // Hours. 0 - 23.
@@ -420,7 +422,7 @@ typedef struct _ArtTimeCodePack_t
 
 typedef struct _ArtDmxPack_t
 {
-    UINT8 ID[8];        // Array of 8 characters, the final character is a null termination. Value = ‘A’ ‘r’ ‘t’ ‘-‘ ‘N’ ‘e’ ‘t’ 0x00
+    UINT8 ID[8];        // Array of 8 characters, the final character is a null termination. Value = ?A? ?r? ?t? ?-? ?N? ?e? ?t? 0x00
     UINT16 OpCode;      // OpOutput Transmitted low byte first.
     UINT8 ProtVerHi;    // High byte of the Art-Net protocol revision number.
     UINT8 ProtVerLo;    // Low byte of the Art-Net protocol revision number. Current value 14
@@ -433,7 +435,7 @@ typedef struct _ArtDmxPack_t
                             // Use Universe for data routing.
     UINT8 SubUni;       // The low byte of the 15 bit Port-Address to which this packet is destined.
     UINT8 Net;          // The top 7 bits of the 15 bit Port-Address to which this packet is destined.
-    UINT8 LengthHi;     // The length of the DMX512 data array. This value should be an even number in the range 2 – 512.
+    UINT8 LengthHi;     // The length of the DMX512 data array. This value should be an even number in the range 2 ? 512.
                             // It represents the number of DMX512 channels encoded in packet.
                             // NB: Products which convert Art-Net to DMX512 may opt to always send 512 channels. High Byte.
     UINT8 Length;       // Low Byte of above.
@@ -446,7 +448,7 @@ typedef struct _ArtDmxPack_t
 
 typedef struct _ArtInputPack_t
 {
-    UINT8 ID[8];        // Array of 8 characters, the final character is a null termination. Value = ‘A’ ‘r’ ‘t’ ‘-‘ ‘N’ ‘e’ ‘t’ 0x00
+    UINT8 ID[8];        // Array of 8 characters, the final character is a null termination. Value = ?A? ?r? ?t? ?-? ?N? ?e? ?t? 0x00
     UINT16 OpCode;      // OpOutput Transmitted low byte first.
     UINT8 ProtVerHi;    // High byte of the Art-Net protocol revision number.
     UINT8 ProtVerLo;    // Low byte of the Art-Net protocol revision number. Current value 14
@@ -466,7 +468,7 @@ typedef struct _ArtInputPack_t
 
 typedef struct _ArtFirmwareMasterPack_t
 {
-    UINT8 ID[8];        // Array of 8 characters, the final character is a null termination. Value = ‘A’ ‘r’ ‘t’ ‘-‘ ‘N’ ‘e’ ‘t’ 0x00
+    UINT8 ID[8];        // Array of 8 characters, the final character is a null termination. Value = ?A? ?r? ?t? ?-? ?N? ?e? ?t? 0x00
     UINT16 OpCode;      // OpOutput Transmitted low byte first.
     UINT8 ProtVerHi;    // High byte of the Art-Net protocol revision number.
     UINT8 ProtVerLo;    // Low byte of the Art-Net protocol revision number. Current value 14
@@ -499,7 +501,7 @@ enum
 
 typedef struct _ArtFirmwareReplyPack_t
 {
-    UINT8 ID[8];        // Array of 8 characters, the final character is a null termination. Value = ‘A’ ‘r’ ‘t’ ‘-‘ ‘N’ ‘e’ ‘t’ 0x00
+    UINT8 ID[8];        // Array of 8 characters, the final character is a null termination. Value = ?A? ?r? ?t? ?-? ?N? ?e? ?t? 0x00
     UINT16 OpCode;      // OpOutput Transmitted low byte first.
     UINT8 ProtVerHi;    // High byte of the Art-Net protocol revision number.
     UINT8 ProtVerLo;    // Low byte of the Art-Net protocol revision number. Current value 14
@@ -519,9 +521,9 @@ enum
 
 typedef struct _FirmwareFileFormat_t
 {
-    UINT8 ChecksumHi;   // This is a 16 bit, one’s compliment checksum of the firmware data area.
+    UINT8 ChecksumHi;   // This is a 16 bit, one?s compliment checksum of the firmware data area.
     UINT8 ChecksumLo;   // LSB of above
-    UINT8 VersInfoHi;   // High byte of Node’s firmware revision number. The Controller should only use this field to decide if a firmware update should proceed.
+    UINT8 VersInfoHi;   // High byte of Node?s firmware revision number. The Controller should only use this field to decide if a firmware update should proceed.
                             // The convention is that a higher number is a more recent release of firmware.
     UINT8 VersInfoLo;   // LSB of above
     UINT8 UserName[30]; // user name information. This information is not checked by the Node. It is purely for display by the Controller.
@@ -540,13 +542,13 @@ typedef struct _FirmwareFileFormat_t
 
 typedef struct _ArtTodRequestPack_t
 {
-    UINT8 ID[8];        // Array of 8 characters, the final character is a null termination. Value = ‘A’ ‘r’ ‘t’ ‘-‘ ‘N’ ‘e’ ‘t’ 0x00
+    UINT8 ID[8];        // Array of 8 characters, the final character is a null termination. Value = ?A? ?r? ?t? ?-? ?N? ?e? ?t? 0x00
     UINT16 OpCode;      // OpOutput Transmitted low byte first.
     UINT8 ProtVerHi;    // High byte of the Art-Net protocol revision number.
     UINT8 ProtVerLo;    // Low byte of the Art-Net protocol revision number. Current value 14
     UINT8 Filler1;      // Pad length to match ArtPoll.
     UINT8 Filler2;      // Pad length to match ArtPoll.
-    UINT8 Spare[7];     // Transmit as zero, receivers don’t test.
+    UINT8 Spare[7];     // Transmit as zero, receivers don?t test.
     UINT8 Net;          // The top 7 bits of the 15 bit Port-Address of Nodes that must respond to this packet.
     UINT8 Command;      // Value Mnemonic Function
     UINT8 AddCount;     // The array size of the Address field. Max value is 32.
@@ -564,14 +566,14 @@ enum
 
 typedef struct _ArtTodDataPack_t
 {
-    UINT8 ID[8];        // Array of 8 characters, the final character is a null termination. Value = ‘A’ ‘r’ ‘t’ ‘-‘ ‘N’ ‘e’ ‘t’ 0x00
+    UINT8 ID[8];        // Array of 8 characters, the final character is a null termination. Value = ?A? ?r? ?t? ?-? ?N? ?e? ?t? 0x00
     UINT16 OpCode;      // OpOutput Transmitted low byte first.
     UINT8 ProtVerHi;    // High byte of the Art-Net protocol revision number.
     UINT8 ProtVerLo;    // Low byte of the Art-Net protocol revision number. Current value 14
     UINT8 RdmVer;       // Art-Net Devices that only support RDM DRAFT V1.0 set field to 0x00.
                             // Devices that support RDM STANDARD V1.0 set field to 0x01.
     UINT8 Port;         // Physical Port. Range 1-4.
-    UINT8 Spare[7];     // Transmit as zero, receivers don’t test.
+    UINT8 Spare[7];     // Transmit as zero, receivers don?t test.
     UINT8 Net;          // The top 7 bits of the Port-Address of the Output Gateway DMX Port that generated this packet.
     UINT8 CommandResponse;  // Defines the packet contents as follows.
     UINT8 Address;      // The low 8 bits of the Port-Address of the Output Gateway DMX Port that generated this packet.
@@ -594,13 +596,13 @@ enum
 
 typedef struct _ArtTodControlPack_t
 {
-    UINT8 ID[8];        // Array of 8 characters, the final character is a null termination. Value = ‘A’ ‘r’ ‘t’ ‘-‘ ‘N’ ‘e’ ‘t’ 0x00
+    UINT8 ID[8];        // Array of 8 characters, the final character is a null termination. Value = ?A? ?r? ?t? ?-? ?N? ?e? ?t? 0x00
     UINT16 OpCode;      // OpOutput Transmitted low byte first.
     UINT8 ProtVerHi;    // High byte of the Art-Net protocol revision number.
     UINT8 ProtVerLo;    // Low byte of the Art-Net protocol revision number. Current value 14
     UINT8 Filler1;      // Pad length to match ArtPoll.
     UINT8 Filler2;      // Pad length to match ArtPoll.
-    UINT8 Spare[7];     // Transmit as zero, receivers don’t test.
+    UINT8 Spare[7];     // Transmit as zero, receivers don?t test.
     UINT8 Net;          // The top 7 bits of the Port-Address of the Output Gateway DMX Port that should action this command.
     UINT8 Command;      // Defines the packet action.
     UINT8 Address;      // The low byte of the 15 bit Port-Address of the DMX Port that should action this command.
@@ -611,18 +613,18 @@ typedef struct _ArtTodControlPack_t
 enum
 {
     AtcNone=0x00,   // No action.
-    AtcFlush=0x01   // The node flushes it’s TOD and instigates full discovery.
+    AtcFlush=0x01   // The node flushes it?s TOD and instigates full discovery.
 };
 
 typedef struct _ArtRdmPack_t
 {
-    UINT8 ID[8];        // Array of 8 characters, the final character is a null termination. Value = ‘A’ ‘r’ ‘t’ ‘-‘ ‘N’ ‘e’ ‘t’ 0x00
+    UINT8 ID[8];        // Array of 8 characters, the final character is a null termination. Value = ?A? ?r? ?t? ?-? ?N? ?e? ?t? 0x00
     UINT16 OpCode;      // OpOutput Transmitted low byte first.
     UINT8 ProtVerHi;    // High byte of the Art-Net protocol revision number.
     UINT8 ProtVerLo;    // Low byte of the Art-Net protocol revision number. Current value 14
     UINT8 RdmVer;       // Art-Net Devices that only support RDM DRAFT V1.0 set field to 0x00. Devices that support RDM STANDARD V1.0 set field to 0x01.
     UINT8 Filler2;      // Pad length to match ArtPoll.
-    UINT8 Spare[7];     // Transmit as zero, receivers don’t test.
+    UINT8 Spare[7];     // Transmit as zero, receivers don?t test.
     UINT8 Net;          // The top 7 bits of 15 bit Port-Address that should action this command.
     UINT8 Command;      // Defines the packet action.
     UINT8 Address;      // The low 8 bits of the Port-Address that should action this command.
@@ -642,22 +644,22 @@ enum
 
 typedef struct _ArtRdmSubPack_t
 {
-    UINT8 ID[8];        // Array of 8 characters, the final character is a null termination. Value = ‘A’ ‘r’ ‘t’ ‘-‘ ‘N’ ‘e’ ‘t’ 0x00
+    UINT8 ID[8];        // Array of 8 characters, the final character is a null termination. Value = ?A? ?r? ?t? ?-? ?N? ?e? ?t? 0x00
     UINT16 OpCode;      // OpOutput Transmitted low byte first.
     UINT8 ProtVerHi;    // High byte of the Art-Net protocol revision number.
     UINT8 ProtVerLo;    // Low byte of the Art-Net protocol revision number. Current value 14
     UINT8 RdmVer;       // Art-Net Devices that only support RDM DRAFT V1.0 set field to 0x00. Devices that support RDM STANDARD V1.0 set field to 0x01.
     UINT8 Filler2;      // Pad length to match ArtPoll.
     UINT8 UID[6];       // UID of target RDM device.
-    UINT8 Spare1;       // Transmit as zero, receivers don’t test.
+    UINT8 Spare1;       // Transmit as zero, receivers don?t test.
     UINT8 CommandClass; // As per RDM specification. This field defines whether this is a Get, Set, GetResponse, SetResponse.
     UINT16 ParameterId; // As per RDM specification. This field defines the type of parameter contained in this packet.
     UINT16 SubDevice;   // Defines the first device information contained in packet. This follows the RDM convention that 0 = root device and 1 = first subdevice.
     UINT16 SubCount;    // The number of sub devices packed into packet. Zero is illegal.
-    UINT8 Spare2;       // Transmit as zero, receivers don’t test.
-    UINT8 Spare3;       // Transmit as zero, receivers don’t test.
-    UINT8 Spare4;       // Transmit as zero, receivers don’t test.
-    UINT8 Spare5;       // Transmit as zero, receivers don’t test.
+    UINT8 Spare2;       // Transmit as zero, receivers don?t test.
+    UINT8 Spare3;       // Transmit as zero, receivers don?t test.
+    UINT8 Spare4;       // Transmit as zero, receivers don?t test.
+    UINT8 Spare5;       // Transmit as zero, receivers don?t test.
     UINT16 Data[1];     // The size of the data array is defined by the contents of CommandClass and SubCount:
                             // CommandClass     Array Size
                             // Get              0
@@ -666,6 +668,11 @@ typedef struct _ArtRdmSubPack_t
                             // SetResponse      0
 
 } ArtRdmSubPack_t;
+
+#endif // #ifdef _ARTNET_CODE
+
+extern void ART_sendReply(UINT16 size);
+
 
 #ifdef __cplusplus
 }

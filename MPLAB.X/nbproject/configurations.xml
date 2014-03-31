@@ -55,6 +55,9 @@
       <itemPath>../hdr/gva_dmx.h</itemPath>
       <itemPath>../hdr/zhd.h</itemPath>
       <itemPath>../hdr/HTTPPrint.h</itemPath>
+      <itemPath>../hdr/Uart.h</itemPath>
+      <itemPath>../hdr/artnet.h</itemPath>
+      <itemPath>../hdr/config.h</itemPath>
     </logicalFolder>
     <logicalFolder name="LibraryFiles"
                    displayName="Library Files"
@@ -73,7 +76,6 @@
                    displayName="Source Files"
                    projectFiles="true">
       <logicalFolder name="TCPIP Stack" displayName="TCPIP Stack" projectFiles="true">
-        <itemPath>D:/microchip_solutions_v2013-06-15/Microchip/TCPIP Stack/ARCFOUR.c</itemPath>
         <itemPath>D:/microchip_solutions_v2013-06-15/Microchip/TCPIP Stack/ARP.c</itemPath>
         <itemPath>D:/microchip_solutions_v2013-06-15/Microchip/TCPIP Stack/AutoIP.c</itemPath>
         <itemPath>D:/microchip_solutions_v2013-06-15/Microchip/TCPIP Stack/BigInt.c</itemPath>
@@ -97,12 +99,10 @@
         <itemPath>../MPFSImg2.c</itemPath>
         <itemPath>D:/microchip_solutions_v2013-06-15/Microchip/TCPIP Stack/NBNS.c</itemPath>
         <itemPath>D:/microchip_solutions_v2013-06-15/Microchip/TCPIP Stack/Random.c</itemPath>
-        <itemPath>D:/microchip_solutions_v2013-06-15/Microchip/TCPIP Stack/Reboot.c</itemPath>
         <itemPath>D:/microchip_solutions_v2013-06-15/Microchip/TCPIP Stack/StackTsk.c</itemPath>
         <itemPath>D:/microchip_solutions_v2013-06-15/Microchip/TCPIP Stack/TCP.c</itemPath>
         <itemPath>D:/microchip_solutions_v2013-06-15/Microchip/TCPIP Stack/Telnet.c</itemPath>
         <itemPath>D:/microchip_solutions_v2013-06-15/Microchip/TCPIP Stack/Tick.c</itemPath>
-        <itemPath>D:/microchip_solutions_v2013-06-15/Microchip/TCPIP Stack/UART.c</itemPath>
         <itemPath>D:/microchip_solutions_v2013-06-15/Microchip/TCPIP Stack/UDP.c</itemPath>
       </logicalFolder>
       <itemPath>../src/Main.c</itemPath>
@@ -111,6 +111,8 @@
       <itemPath>../src/Ping.c</itemPath>
       <itemPath>../src/HTTPApp.c</itemPath>
       <itemPath>../src/artnet.c</itemPath>
+      <itemPath>../src/Uart.c</itemPath>
+      <itemPath>../src/config.c</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"
@@ -176,7 +178,7 @@
         <property key="post-instruction-scheduling" value="default"/>
         <property key="pre-instruction-scheduling" value="default"/>
         <property key="preprocessor-macros"
-                  value="CFG_INCLUDE_PIC32_ETH_SK_ETH795;_ARTNET"/>
+                  value="CFG_INCLUDE_PIC32_ETH_SK_ETH795;_ARTNET;_DMX"/>
         <property key="strict-ansi" value="false"/>
         <property key="support-ansi" value="false"/>
         <property key="use-cci" value="false"/>

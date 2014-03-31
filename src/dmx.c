@@ -11,38 +11,44 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "hdr/main.h"
-#include "config.h"
+#include "main.h"
+#include "GenericTypeDefs.h"
+#include "HardwareProfile.h"
 
+#include "Uart.h"
+#include "artnet.h"
+
+#define _DMX_CODE
 #include "dmx.h"
+#undef _DMX_CODE
 
-static uint8 DMX_channelData[MAX_DMX_SLOTS+1];
-static uint8 dmxState;
-static uint16 dmxBufPtr;
+static UINT8 DMX_channelData[MAX_DMX_SLOTS+1];
+static UINT8 dmxState;
+static UINT16 dmxBufPtr;
 
-static uint8* txBuf;
-static uint16 txSize;
-static uint16 rcvdSize = 0;
+static UINT8* txBuf;
+static UINT16 txSize;
+static UINT16 rcvdSize = 0;
 
-static uint8 *rxRequest = 0;
-static uint8* rxBuf;
-static uint16 rxSize;
+static UINT8 *rxRequest = 0;
+static UINT8* rxBuf;
+static UINT16 rxSize;
 
 /**
 @brief  start DMX receiving.
 
 @return none.
 */
-static void startReceive (uint8 *buf, uint16 size)
+static void startReceive (UINT8 *buf, UINT16 size)
 {
     rxBuf = buf;
     rxSize = size;
     // init data pointer
     dmxBufPtr = 0;
     // enable RX
-    CPU_enableDmxRx(EN_INT);
+    UART_enableDmxRx(EN_INT);
     // set DMX timer for receiving
-    CPU_setDmxTimer_RX(DMX_RX_TIMEOUT);
+    UART_setDmxTimer(DMX_RX_TIMEOUT);
 }
 
 /**
@@ -52,7 +58,7 @@ static void startReceive (uint8 *buf, uint16 size)
 */
 void DMX_init (void)
 {
-    CPU_initDmx();
+    UART_initDmx();
     dmxState = DMX_IDLE_STATE;
     GVA_init();
 }
@@ -62,25 +68,25 @@ void DMX_init (void)
 
 @return none.
 */
-static void startTransfer (uint8 *buf, uint16 size)
+static void startTransfer (UINT8 *buf, UINT16 size)
 {
     // wait DMX UART is idle
-    while (!CPU_isDmxUartIdle()) {};
+    while (!UART_isDmxUartIdle()) {};
 
 #ifdef __DEF_DBG__
-    if (!CPU_isDmxIdle())
+    if (!UART_isDmxIdle())
     {
-        CPU_disableDmxRx();
+        UART_disableDmxRx();
     }
 #endif // #ifdef __DEF_DBG__
     txBuf = buf;
     txSize = size;
     // switch to output
-    CPU_setDmxTx();
+    UART_setDmxTx();
     // send "break" - "0" for 88 us...1 sec
-    CPU_setDmxPortLow();
+    UART_setDmxPortLow();
     dmxState = DMX_BREAK_STATE;
-    CPU_setDmxTimer_TX(DMX_BREAK_TIME);
+    UART_setDmxTimer(DMX_BREAK_TIME);
 }
 
 /**
@@ -103,8 +109,8 @@ static void sendDmxData (void)
 */
 void handleGvaCmd (GVAcmd_t *cmd)
 {
-    // check CRC
-    if (!CFG_crc16(RAM_SRC, (uint8*)cmd, cmd->size + 5))
+/*    // check CRC
+    if (!CFG_crc16(RAM_SRC, (UINT8*)cmd, cmd->size + 5))
     {
         switch (cmd->cmd)
         {
@@ -116,14 +122,15 @@ void handleGvaCmd (GVAcmd_t *cmd)
                     CFG_writeBuf(cmd->u.eep.addr, &cmd->u.eep.dt, 1);
                     // send reply
                     cmd->cmd = 'Y';
-                    cmd->u.eep.crc = CFG_crc16(RAM_SRC, (uint8*)cmd, cmd->size + 3);
-                    startTransfer((uint8*)cmd, cmd->size + 5);
+                    cmd->u.eep.crc = CFG_crc16(RAM_SRC, (UINT8*)cmd, cmd->size + 3);
+                    startTransfer((UINT8*)cmd, cmd->size + 5);
                 }
                 break;
             default:
                 break;
         }
     }
+*/
 }
 #endif // #ifdef _ARTNET
 
@@ -132,9 +139,11 @@ void handleGvaCmd (GVAcmd_t *cmd)
 
 @return none.
 */
-void DMX_handler (void)
+void DMX_Task (void)
 {
-    static uint16 dmxTimer=0;
+#ifdef _DMX_CLIENT
+    static UINT16 dmxTimer=0;
+#endif // #ifdef _DMX_CLIENT
 
     if (rcvdSize)
     {
@@ -175,7 +184,7 @@ void DMX_handler (void)
     }
 #ifdef _DMX_CLIENT
     // send DMX packets every DMX_RETRANSMIT_TIME_MS
-    if ((uint16)(CPU_get_msTime() - dmxTimer) >= DMX_RETRANSMIT_TIME_MS)
+    if ((UINT16)(CPU_get_msTime() - dmxTimer) >= DMX_RETRANSMIT_TIME_MS)
     {
         void;
         dmxTimer = CPU_get_msTime(); // update dmx timer
@@ -187,7 +196,7 @@ void DMX_handler (void)
     }
 #endif  // #ifdef _DMX_CLIENT
     // if DMX is IDLE then start receiving
-    if (CPU_isDmxIdle())
+    if (UART_isDmxIdle())
     {
         // if there is a receive request
         if (rxRequest)
@@ -214,20 +223,20 @@ void DMX_TX_ISR (void)
         case DMX_BREAK_STATE:
             // break was sent
             // send "Mark After Break" - "1" for 8 us - 1 sec
-            CPU_setDmxPortHigh();
+            UART_setDmxPortHigh();
             dmxState = DMX_MAB_STATE;
-            CPU_setDmxTimer_TX(DMX_MAB_TIME);
+            UART_setDmxTimer(DMX_MAB_TIME);
             break;
         case DMX_MAB_STATE:
             // MAB was sent
             // send "start code"
-            CPU_disableDmxTimer();
+            UART_disableDmxTimer();
             dmxBufPtr = 0;
             dmxState = DMX_DATA_STATE;
-            CPU_enableDmxTxIrq();
+            UART_enableDmxTxIrq();
         case DMX_DATA_STATE:
             // send "start code" and data
-            CPU_sendDmxData(txBuf[dmxBufPtr]);
+            UART_sendDmxData(txBuf[dmxBufPtr]);
             if (++dmxBufPtr >= txSize)
             {
                 dmxState = DMX_MBB_STATE;
@@ -237,13 +246,13 @@ void DMX_TX_ISR (void)
             // Data was sent
             // send "Mark Before Break" - "1" for 0 us - 1 sec
             // stop DMX UART IRQ
-            CPU_disableDmxTxIrq();
-            CPU_setDmxTimer_TX(DMX_MBB_TIME);
+            UART_disableDmxTxIrq();
+            UART_setDmxTimer(DMX_MBB_TIME);
             dmxState = DMX_PAUSE_STATE;
             break;
         case DMX_PAUSE_STATE:
             // transfer is complete
-            CPU_disableDmxTimer();
+            UART_disableDmxTimer();
         default:
             break;
     }
@@ -254,7 +263,7 @@ void DMX_TX_ISR (void)
 
 @return none.
 */
-uint8 DMX_getChannel (uint16 netAddr)
+UINT8 DMX_getChannel (UINT16 netAddr)
 {
     // TODO: map netAddr to DMX channel
     return 0;
@@ -265,7 +274,7 @@ uint8 DMX_getChannel (uint16 netAddr)
 
 @return none.
 */
-uint8 * DMX_getBuf (void)
+UINT8 * DMX_getBuf (void)
 {
     return &DMX_channelData[1];
 }
@@ -290,7 +299,7 @@ void DMX_activateChannel (void)
 
 @return none.
 */
-void DMX_sendRdm (uint8 *buf, uint16 size)
+void DMX_sendRdm (UINT8 *buf, UINT16 size)
 {
     rxRequest = buf;
     startTransfer(buf, size);
@@ -302,7 +311,7 @@ void DMX_sendRdm (uint8 *buf, uint16 size)
 
 @return none.
 */
-void DMX_sendAnswer (uint8 *buf, uint16 size)
+void DMX_sendAnswer (UINT8 *buf, UINT16 size)
 {
     rxRequest = 0;
     startTransfer(buf, size);
@@ -315,8 +324,8 @@ void DMX_sendAnswer (uint8 *buf, uint16 size)
 */
 void DMX_RX_ISR (void)
 {
-    if (CPU_isDmxRecvError() // received a corrupted byte
-        || CPU_isTimeOut()  // timeout
+    if (UART_isDmxRecvError() // received a corrupted byte
+        || UART_isTimeOut()  // timeout
         || (dmxBufPtr >= rxSize))  // received the maximum number of bytes
     {
         // reset receiving
@@ -325,17 +334,17 @@ void DMX_RX_ISR (void)
         if (dmxBufPtr >= (DMX_MIN_RX_SIZE - 1))
         {
             // stop receiving
-            CPU_disableDmxRx();
+            UART_disableDmxRx();
             // send DMX data to ARTNET
             rcvdSize = dmxBufPtr + 1;
             dmxBufPtr = 0;
             return;
         }
 #if 0//def _DMX_CLIENT
-        else if (CPU_isTimeOut())
+        else if (UART_isTimeOut())
         {
             // stop receiving
-            CPU_disableDmxRx();
+            UART_disableDmxRx();
             return;
         }
 #endif // #ifdef _DMX_CLIENT
@@ -351,10 +360,10 @@ void DMX_RX_ISR (void)
     }
 
     // receive one byte
-    rxBuf[dmxBufPtr] = CPU_recvDmxData();
+    rxBuf[dmxBufPtr] = UART_recvDmxData();
 
     // restart DMX timer
-    CPU_setDmxTimer_RX(DMX_RX_TIMEOUT);
+    UART_setDmxTimer(DMX_RX_TIMEOUT);
 
 #if 0//def _DMX_CLIENT
     // we don't expect to get any regular data here
@@ -374,18 +383,18 @@ void DMX_RX_ISR (void)
 */
 void DMX_stopTransfer (void)
 {
-    CPU_disableDmxTimer();
-    CPU_disableDmxRxIrq();
-    CPU_disableDmxTxIrq();
+    UART_disableDmxTimer();
+    UART_disableDmxRxIrq();
+    UART_disableDmxTxIrq();
     dmxState = DMX_PAUSE_STATE;
-    CPU_setDmxRx();
+    UART_setDmxRx();
 }
 
 #ifdef UNIT_TEST
 
-void DMX_unitTest (void, uint8 val)
+void DMX_unitTest (void, UINT8 val)
 {
-    uint16 i;
+    UINT16 i;
 
     for (i=1; i<(MAX_DMX_SLOTS + 1); i++)
     {
