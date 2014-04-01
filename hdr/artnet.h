@@ -15,7 +15,7 @@ extern "C" {
 #endif
 
 #define ARTNET_PORT     0x1936
-#define ARTNET_PROTO_HI     2
+#define ARTNET_PROTO_HI     0//2
 #define ARTNET_PROTO_LO     14
 
 #define ARTNET_RPLY_MAX_DELAY_MS   3000
@@ -668,6 +668,14 @@ typedef struct _ArtRdmSubPack_t
                             // SetResponse      0
 
 } ArtRdmSubPack_t;
+
+typedef union _ArtPack_t
+{
+    ArtPollPack_t       poll;
+    ArtPollReplyPack_t  pollrply;
+    ArtDmxPack_t        dmx;
+    ArtRdmPack_t        rdm;
+} ArtPack_t;
 
 #endif // #ifdef _ARTNET_CODE
 

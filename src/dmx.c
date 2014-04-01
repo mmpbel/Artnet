@@ -14,6 +14,7 @@
 #include "main.h"
 #include "GenericTypeDefs.h"
 #include "HardwareProfile.h"
+#include "TCPIP Stack/Tick.h"
 
 #include "Uart.h"
 #include "artnet.h"
@@ -142,7 +143,7 @@ void handleGvaCmd (GVAcmd_t *cmd)
 void DMX_Task (void)
 {
 #ifdef _DMX_CLIENT
-    static UINT16 dmxTimer=0;
+    static UINT32 dmxTimer=0;
 #endif // #ifdef _DMX_CLIENT
 
     if (rcvdSize)
@@ -184,10 +185,9 @@ void DMX_Task (void)
     }
 #ifdef _DMX_CLIENT
     // send DMX packets every DMX_RETRANSMIT_TIME_MS
-    if ((UINT16)(CPU_get_msTime() - dmxTimer) >= DMX_RETRANSMIT_TIME_MS)
+    if ((TickGet() - dmxTimer) >= DMX_RETRANSMIT_TIME)
     {
-        void;
-        dmxTimer = CPU_get_msTime(); // update dmx timer
+        dmxTimer = TickGet();
         if (DMX_PAUSE_STATE == dmxState)
         {
             // start DMX transfer if there was data received from ARTNET

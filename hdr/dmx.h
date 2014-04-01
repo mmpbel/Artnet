@@ -31,7 +31,7 @@ enum
 #define DMX_START_CODE   0
 #define DMX_GVA_CODE     'G'
 
-#define DMX_RETRANSMIT_TIME_MS    1000
+#define DMX_RETRANSMIT_TIME    TICKS_PER_SECOND
 
 #define DMX_MBB_TIME      (100 * GetSystemClockMHz()) // DMX mark before break time in us - 0 us..1 sec
 #define DMX_BREAK_TIME    (176 * GetSystemClockMHz()) // DMX break time in us - 88 us..1 sec

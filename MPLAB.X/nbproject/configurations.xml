@@ -178,7 +178,7 @@
         <property key="post-instruction-scheduling" value="default"/>
         <property key="pre-instruction-scheduling" value="default"/>
         <property key="preprocessor-macros"
-                  value="CFG_INCLUDE_PIC32_ETH_SK_ETH795;_ARTNET;_DMX"/>
+                  value="CFG_INCLUDE_PIC32_ETH_SK_ETH795;_ARTNET;_DMX;_DMX_CLIENT"/>
         <property key="strict-ansi" value="false"/>
         <property key="support-ansi" value="false"/>
         <property key="use-cci" value="false"/>

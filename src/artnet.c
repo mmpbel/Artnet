@@ -26,15 +26,13 @@
 
 extern NODE_INFO remoteNode;
 
+static UDP_SOCKET ArtSocket;
+static ArtPack_t *ArtData;
+static UINT32 ArtSize = 0;
+
 static const UINT8 ArtNetId[] = {'A', 'r', 't', '-', 'N', 'e', 't', 0x00};
 
-static union _ArtPack_t
-{
-    ArtPollPack_t       poll;
-    ArtPollReplyPack_t  pollrply;
-    ArtDmxPack_t        dmx;
-    ArtRdmPack_t        rdm;
-} artBuf;
+static ArtPack_t artBuf;
 
 
 /**
@@ -64,17 +62,15 @@ static UINT8 checkPackId (UINT8 ID[])
 */
 static void sendArtPollReply (ArtPollReplyPack_t *pkt)
 {
-//    UINT32 ipAddr = DIRECTED_BROADCAST_IP;
-
     memset((UINT8*)pkt, 0, sizeof(ArtPollReplyPack_t));
 
     memcpy(pkt->ID, (void*)ArtNetId, sizeof(pkt->ID));
     pkt->OpCode = OpPollReply;
 
-    pkt->IpAddress[0] = AppConfig.MyIPAddr.byte.MB;
-    pkt->IpAddress[1] = AppConfig.MyIPAddr.byte.UB;
-    pkt->IpAddress[2] = AppConfig.MyIPAddr.byte.HB;
-    pkt->IpAddress[3] = AppConfig.MyIPAddr.byte.LB;
+    pkt->IpAddress[0] = AppConfig.MyIPAddr.byte.LB;
+    pkt->IpAddress[1] = AppConfig.MyIPAddr.byte.HB;
+    pkt->IpAddress[2] = AppConfig.MyIPAddr.byte.UB;
+    pkt->IpAddress[3] = AppConfig.MyIPAddr.byte.MB;
 
     pkt->Port = ARTNET_PORT;
 
@@ -121,8 +117,11 @@ static void sendArtPollReply (ArtPollReplyPack_t *pkt)
 
     pkt->Status2 = (1<<3);
 
-//    SOC_sendto(ARTNET_SOCKET, (UINT8*)pkt, sizeof(ArtPollReplyPack_t), (UINT8*)&ipAddr, ARTNET_PORT);
-    UDPPutArray((BYTE*)pkt, sizeof(ArtPollReplyPack_t));
+    // Change the destination to the broadcast address
+    UDPSocketInfo[ArtSocket].remote.remoteNode.IPAddr.Val |= ~AppConfig.MyMask.Val;
+
+    ArtData = (ArtPack_t*)pkt;
+    ArtSize = sizeof(ArtPollReplyPack_t);
 }
 
 /**
@@ -144,8 +143,8 @@ static void sendArtRdm (ArtRdmPack_t *pkt, UINT16 size)
     pkt->Command = RDM_REPLY;      // Defines the packet action.
     pkt->Address = 0;      // The low 8 bits of the Port-Address that should action this command.
 
-//    SOC_sendto(ARTNET_SOCKET, (UINT8*)pkt, , (UINT8*)&destIp, ARTNET_PORT);
-    UDPPutArray((BYTE*)pkt, pkt->RdmPacket - pkt->ID + size);
+    ArtData = (ArtPack_t*)pkt;
+    ArtSize = pkt->RdmPacket - pkt->ID + size;
 }
 
 /**
@@ -204,8 +203,6 @@ void ART_Task (void)
         ART_DISABLED
     } DiscoverySM = ART_HOME;
 
-    static UDP_SOCKET   MySocket;
-
     switch(DiscoverySM)
     {
         case ART_HOME:
@@ -213,9 +210,9 @@ void ART_Task (void)
             // Since we expect to only receive broadcast packets and
             // only send unicast packets directly to the node we last
             // received from, the remote NodeInfo parameter can be anything
-            MySocket = UDPOpenEx(0, UDP_OPEN_SERVER, ARTNET_PORT, ARTNET_PORT);
+            ArtSocket = UDPOpenEx(0, UDP_OPEN_SERVER, ARTNET_PORT, ARTNET_PORT);
 
-            if (MySocket == INVALID_UDP_SOCKET)
+            if (ArtSocket == INVALID_UDP_SOCKET)
             {
                 return;
             }
@@ -227,22 +224,20 @@ void ART_Task (void)
 
         case ART_LISTEN:
             // Do nothing if no data is waiting
-            if (!UDPIsGetReady(MySocket))
+            if (!UDPIsGetReady(ArtSocket))
             {
                 return;
             }
 
-            UINT16 sizeRcvd;
-
-            sizeRcvd = UDPGetArray((UINT8*)&artBuf, sizeof(ArtPollPack_t));
-
             // check if it's a proper packet
-            if ((sizeRcvd >= sizeof(ArtPollPack_t))
+            if ((sizeof(ArtPollPack_t) == UDPGetArray((UINT8*)&artBuf, sizeof(ArtPollPack_t)))
                 && checkPackId(artBuf.poll.ID)
                 && (ARTNET_PROTO_HI <= artBuf.poll.ProtVerHi)
                 && (ARTNET_PROTO_LO == artBuf.poll.ProtVerLo)
                 )
             {
+                UINT32 size;
+                UINT8 ch;
 #ifdef _DMX
                 // stop all DMX activity
                 DMX_stopTransfer();
@@ -250,90 +245,79 @@ void ART_Task (void)
                 switch (artBuf.poll.OpCode)
                 {
                     case OpPoll:
+
                         sendArtPollReply(&artBuf.pollrply);
                         break;
+
                     case OpOutput:
-                        if (sizeRcvd >= sizeof(ArtDmxPack_t))
+
+                        size = artBuf.dmx.Data - &artBuf.dmx.SubUni;
+                        // read out SubUni, Net, LengthHi, Length
+                        if (size != UDPGetArray(&artBuf.dmx.SubUni, size))
                         {
-                            UINT8 ch;
-                            UINT16 dmxSize;
-                            // read out SubUni, Net, LengthHi, Length
-                            UDPGetArray(&artBuf.dmx.SubUni, artBuf.dmx.Data - &artBuf.dmx.SubUni);
-                            // check if the size is correct
-                            dmxSize = ((((UINT16)artBuf.dmx.LengthHi) << 8) | artBuf.dmx.Length);
-                            if (MAX_DMX_SLOTS != dmxSize)
-                            {
-                                // error
-                                break;
-                            }
+                            break;
+                        }
+                        // check if the size is correct
+                        size = ((((UINT16)artBuf.dmx.LengthHi) << 8) | artBuf.dmx.Length);
+                        if (MAX_DMX_SLOTS != size)
+                        {
+                            // error
+                            break;
+                        }
 #ifdef _DMX
-                            ch = DMX_getChannel((((UINT16)artBuf.dmx.Net) << 8) | artBuf.dmx.SubUni);
-                            // copy DMX data from ethernet controller into DMX channel buffer
-                            UDPGetArray(DMX_getBuf(), dmxSize);
+                        ch = DMX_getChannel((((UINT16)artBuf.dmx.Net) << 8) | artBuf.dmx.SubUni);
+                        // copy DMX data from ethernet controller into DMX channel buffer
+                        if (size == UDPGetArray(DMX_getBuf(), size))
+                        {
                             // activate DMX channel if it was not active yet
                             DMX_activateChannel();
-#endif // #ifdef _DMX
                         }
-                        break;
-                    case OpRdm:
-                        if (sizeRcvd > (artBuf.rdm.RdmPacket - artBuf.rdm.ID))
-                        {
-                            UINT8 ch;
-                            UINT16 dataSize = sizeRcvd - (artBuf.rdm.RdmPacket - artBuf.rdm.ID);
-                            if (dataSize > sizeof(artBuf.rdm.RdmPacket))
-                            {
-                                // error
-                                break;
-                            }
-                            // read out Spare[7], Net, Command, Address
-                            UDPGetArray(artBuf.rdm.Spare, artBuf.rdm.RdmPacket - artBuf.rdm.Spare);
-                            if (RDM_REQUEST == sizeof(artBuf.rdm.RdmPacket))
-                            {
-                                // error
-                                break;
-                            }
-#ifdef _DMX
-                            ch = DMX_getChannel((((UINT16)artBuf.rdm.Net) << 8) | artBuf.rdm.Address);
 #endif // #ifdef _DMX
-                            // copy RDM data from ethernet controller into RDM channel buffer
-                            UDPGetArray(artBuf.rdm.RdmPacket, dataSize);
+                        break;
+
+                    case OpRdm:
+
+                        // read out Spare[7], Net, Command, Address
+                        size = artBuf.rdm.RdmPacket - artBuf.rdm.Spare;
+                        if (size != UDPGetArray(artBuf.rdm.Spare, size))
+                        {
+                            break;
+                        }
+                        if (RDM_REQUEST == artBuf.rdm.Command)
+                        {
+                            // error
+                            break;
+                        }
+#ifdef _DMX
+                        ch = DMX_getChannel((((UINT16)artBuf.rdm.Net) << 8) | artBuf.rdm.Address);
+#endif // #ifdef _DMX
+                        // copy RDM data from ethernet controller into RDM channel buffer
+                        size = UDPGetArray(artBuf.rdm.RdmPacket, sizeof(artBuf.rdm.RdmPacket));
+                        if (size > 0)
+                        {
                             // handle RDM packet
-                            handleRdm(&artBuf.rdm, dataSize);
+                            handleRdm(&artBuf.rdm, size);
                         }
                         break;
                     default:
                         break;
                 }
             }
-
             UDPDiscard();
-
-            // We received a discovery request, reply when we can
             DiscoverySM++;
 
-            // Change the destination to the unicast address of the last received packet
-            memcpy((void*)&UDPSocketInfo[MySocket].remote.remoteNode, (const void*)&remoteNode, sizeof(remoteNode));
-
-            // No break needed.  If we get down here, we are now ready for the ART_REQUEST_RECEIVED state
-
         case ART_REQUEST_RECEIVED:
-            if (!UDPIsPutReady(MySocket))
+
+            if (ArtSize)
             {
-                return;
+                if (!UDPIsPutReady(ArtSocket))
+                {
+                    return;
+                }
+                UDPPutArray((BYTE*)ArtData, ArtSize);
+                // Send the packet
+                UDPFlush();
             }
-
-            // Begin sending our MAC address in human readable form.
-            // The MAC address theoretically could be obtained from the
-            // packet header when the computer receives our UDP packet,
-            // however, in practice, the OS will abstract away the useful
-            // information and it would be difficult to obtain.  It also
-            // would be lost if this broadcast packet were forwarded by a
-            // router to a different portion of the network (note that
-            // broadcasts are normally not forwarded by routers).
-            UDPPutArray((BYTE*)AppConfig.NetBIOSName, sizeof(AppConfig.NetBIOSName)-1);
-
-            // Send the packet
-            UDPFlush();
 
             // Listen for other discovery requests
             DiscoverySM = ART_LISTEN;
