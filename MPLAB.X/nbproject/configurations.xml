@@ -101,7 +101,6 @@
         <itemPath>D:/microchip_solutions_v2013-06-15/Microchip/TCPIP Stack/Random.c</itemPath>
         <itemPath>D:/microchip_solutions_v2013-06-15/Microchip/TCPIP Stack/StackTsk.c</itemPath>
         <itemPath>D:/microchip_solutions_v2013-06-15/Microchip/TCPIP Stack/TCP.c</itemPath>
-        <itemPath>D:/microchip_solutions_v2013-06-15/Microchip/TCPIP Stack/Telnet.c</itemPath>
         <itemPath>D:/microchip_solutions_v2013-06-15/Microchip/TCPIP Stack/Tick.c</itemPath>
         <itemPath>D:/microchip_solutions_v2013-06-15/Microchip/TCPIP Stack/UDP.c</itemPath>
       </logicalFolder>

@@ -37,6 +37,8 @@ void PING_Task(void);
 void ART_Task(void);
 void DMX_Task(void);
 
+void DMX_init(void);
+
 // Define a header structure for validating the AppConfig data structure in EEPROM/Flash
 typedef struct
 {

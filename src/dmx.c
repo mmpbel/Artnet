@@ -24,7 +24,7 @@
 #undef _DMX_CODE
 
 static UINT8 DMX_channelData[MAX_DMX_SLOTS+1];
-static UINT8 dmxState;
+static INT dmxState;
 static UINT16 dmxBufPtr;
 
 static UINT8* txBuf;
@@ -33,14 +33,14 @@ static UINT16 rcvdSize = 0;
 
 static UINT8 *rxRequest = 0;
 static UINT8* rxBuf;
-static UINT16 rxSize;
+static UINT rxSize;
 
 /**
 @brief  start DMX receiving.
 
 @return none.
 */
-static void startReceive (UINT8 *buf, UINT16 size)
+static void startReceive (UINT8 *buf, UINT size)
 {
     rxBuf = buf;
     rxSize = size;
@@ -69,7 +69,7 @@ void DMX_init (void)
 
 @return none.
 */
-static void startTransfer (UINT8 *buf, UINT16 size)
+static void startTransfer (UINT8 *buf, UINT size)
 {
     // wait DMX UART is idle
     while (!UART_isDmxUartIdle()) {};
@@ -263,7 +263,7 @@ void DMX_TX_ISR (void)
 
 @return none.
 */
-UINT8 DMX_getChannel (UINT16 netAddr)
+UINT DMX_getChannel (UINT16 netAddr)
 {
     // TODO: map netAddr to DMX channel
     return 0;
@@ -299,7 +299,7 @@ void DMX_activateChannel (void)
 
 @return none.
 */
-void DMX_sendRdm (UINT8 *buf, UINT16 size)
+void DMX_sendRdm (UINT8 *buf, UINT size)
 {
     rxRequest = buf;
     startTransfer(buf, size);
@@ -311,7 +311,7 @@ void DMX_sendRdm (UINT8 *buf, UINT16 size)
 
 @return none.
 */
-void DMX_sendAnswer (UINT8 *buf, UINT16 size)
+void DMX_sendAnswer (UINT8 *buf, UINT size)
 {
     rxRequest = 0;
     startTransfer(buf, size);
@@ -392,9 +392,9 @@ void DMX_stopTransfer (void)
 
 #ifdef UNIT_TEST
 
-void DMX_unitTest (void, UINT8 val)
+void DMX_unitTest (void, UINT val)
 {
-    UINT16 i;
+    UINT i;
 
     for (i=1; i<(MAX_DMX_SLOTS + 1); i++)
     {

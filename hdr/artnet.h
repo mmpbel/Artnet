@@ -679,7 +679,7 @@ typedef union _ArtPack_t
 
 #endif // #ifdef _ARTNET_CODE
 
-extern void ART_sendReply(UINT16 size);
+extern void ART_sendReply(UINT size);
 
 
 #ifdef __cplusplus

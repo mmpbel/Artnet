@@ -44,7 +44,7 @@ extern UINT8 lenFrame;
 #define CFG_FLASH_START_ADDR_2  (CFG_FLASH_START_ADDR_1 + sizeof(CFG_t) + sizeof(UINT16))
 #define CFG_DMX_OFFSET(x)        ((UINT16)(UINT32)&(((CFG_t*)0)->dmx.x))
 
-UINT16 CFG_crc16(UINT8 src, UINT8 *buf,  UINT16 size);
+UINT16 CFG_crc16(UINT src, UINT8 *buf,  UINT size);
 
 enum
 {
@@ -59,8 +59,8 @@ enum
 #define cntErrReIni     (cntErrWDT + 1)
 
 extern UINT8 CFG_updateCRC(void);
-extern void CFG_writeBuf(UINT16 offs, UINT8 *buf, UINT16 size);
-extern void CFG_writeByte(UINT16 offs, UINT8 val);
+extern void CFG_writeBuf(UINT offs, UINT8 *buf, UINT size);
+extern void CFG_writeByte(UINT offs, UINT8 val);
 
 #ifdef        __cplusplus
 }

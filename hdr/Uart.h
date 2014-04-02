@@ -6,7 +6,7 @@
 #ifdef _UART_CODE
 
 #define DEFAULT_BAUDRATE 			250000
-
+/*
 #define Ux(y)         U1##y
 
 #define UxBRG           Ux(BRG)
@@ -19,7 +19,7 @@
 #define UxRXREG         Ux(RXREG)
 #define UxTXIE          Ux(TXIE)
 #define UxRXIE          Ux(RXIE)
-
+*/
 #endif  // #ifdef _UART_CODE
 
 #ifdef __cplusplus
@@ -33,7 +33,7 @@ enum
 };
 
 extern void UART_initDmx(void);
-extern void UART_enableDmxRx(UINT8 en_int);
+extern void UART_enableDmxRx(UINT en_int);
 extern void UART_disableDmxRx(void);
 extern void UART_setDmxTimer(UINT32 us);
 extern void UART_setDmxTx(void);
@@ -46,11 +46,11 @@ extern void UART_disableDmxTxIrq(void);
 extern void UART_disableDmxRxIrq(void);
 extern void UART_sendDmxData(UINT8 txChar);
 extern UINT8 UART_recvDmxData(void);
-extern UINT8 UART_isDmxIdle (void);
-extern UINT8 UART_isDmxUartIdle(void);
-extern UINT8 UART_isDmxRecvError(void);
-extern UINT8 UART_isTimeOut(void);
-extern UINT8 UART_isDmxRecv(void);
+extern BOOL UART_isDmxIdle (void);
+extern BOOL UART_isDmxUartIdle(void);
+extern BOOL UART_isDmxRecvError(void);
+extern BOOL UART_isTimeOut(void);
+extern BOOL UART_isDmxRecv(void);
 
 #ifdef __cplusplus
 }

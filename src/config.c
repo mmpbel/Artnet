@@ -47,13 +47,13 @@ const CFG_t defaultCfg LOCATION_1 =
 
 CFG_t cfg;
 
-UINT8 lenFrame; //длина кадра DMX
+UINT8 lenFrame;
 
 /**
 @brief  Read configuration
 @return   none
 */
-void read (UINT16 addr, UINT8 *buf, UINT16 size)
+void read (UINT addr, UINT8 *buf, UINT size)
 {
     do
     {
@@ -66,12 +66,12 @@ void read (UINT16 addr, UINT8 *buf, UINT16 size)
 @brief  Get crc16
 @return   crc16
 */
-UINT16 CFG_crc16 (UINT8 src, UINT8 *buf,  UINT16 size)
+UINT16 CFG_crc16 (UINT src, UINT8 *buf,  UINT size)
 {
     #define GEN 0xA001
 
     UINT16 rg = 0xFFFF; // The initial state of the shift register
-    UINT16 addr;
+    UINT addr;
 
     if (FLASH_1_SRC == src)
     {
@@ -84,7 +84,7 @@ UINT16 CFG_crc16 (UINT8 src, UINT8 *buf,  UINT16 size)
 
     do
     {
-        UINT8 j = 8;
+        UINT j = 8;
         if (RAM_SRC == src)
         {
             rg ^= *buf++;
@@ -101,7 +101,7 @@ UINT16 CFG_crc16 (UINT8 src, UINT8 *buf,  UINT16 size)
 
         do
         {
-            UINT8 flag = rg & 1;
+            UINT flag = rg & 1;
             rg >>= 1;
             if (flag)
             {
@@ -115,7 +115,7 @@ UINT16 CFG_crc16 (UINT8 src, UINT8 *buf,  UINT16 size)
     return rg;
 }
 
-static void write (UINT16 addr, UINT8 *buf, UINT16 size)
+static void write (UINT addr, UINT8 *buf, UINT size)
 {
     do
     {
@@ -128,7 +128,7 @@ static void write (UINT16 addr, UINT8 *buf, UINT16 size)
 @brief  Write configuration from a buffer
 @return   none
 */
-void CFG_writeBuf (UINT16 offs, UINT8 *buf, UINT16 size)
+void CFG_writeBuf (UINT offs, UINT8 *buf, UINT size)
 {
     memcpy((UINT8*)&cfg + offs, buf, size);
 //    write(CFG_FLASH_START_ADDR_1 + offs, buf, size);
@@ -139,7 +139,7 @@ void CFG_writeBuf (UINT16 offs, UINT8 *buf, UINT16 size)
 @brief  Write configuration byte
 @return   none
 */
-void CFG_writeByte (UINT16 offs, UINT8 val)
+void CFG_writeByte (UINT offs, UINT8 val)
 {
     ((UINT8*)&cfg)[offs] = val;
     CPU_wrNVM(CFG_FLASH_START_ADDR_1 + offs, val);
@@ -172,7 +172,7 @@ void CFG_init (void)
         }
         else  //обе области запорчены,
         {
-            UINT8 i;
+            UINT i;
             // set default configuration
             memcpy(&cfg, (void*)&defaultCfg, sizeof(CFG_t));
             CFG_writeBuf(CFG_FLASH_START_ADDR_1, (UINT8*)&cfg, sizeof(cfg));
@@ -198,8 +198,8 @@ void CFG_init (void)
 */
 UINT8 CFG_updateCRC (void)
 {
-    UINT8 i;
-    UINT8 fCRCbad;
+    UINT i;
+    UINT fCRCbad;
     UINT16 crc;
 
     crc = CFG_crc16(RAM_SRC, (UINT8*)&cfg, sizeof(cfg));

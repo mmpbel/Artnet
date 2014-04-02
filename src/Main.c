@@ -71,6 +71,10 @@ int main(void)
     // application modules (HTTP, SNMP, etc.)
     StackInit();
 
+#ifdef _DMX
+    DMX_init();
+#endif
+
     // Now that all items are initialized, begin the co-operative
     // multitasking loop.  This infinite loop will continuously 
     // execute all stack-related tasks, as well as your own

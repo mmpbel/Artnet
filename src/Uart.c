@@ -35,8 +35,8 @@
 void UART_sendDmxData (UINT8 txChar)
 {
     // polling implementation
-    while(UxSTAbits.UTXBF); // wait for TX buffer to be empty
-    UxTXREG = txChar;
+    while(U1STAbits.UTXBF); // wait for TX buffer to be empty
+    U1TXREG = txChar;
 }
 
 /**
@@ -45,7 +45,7 @@ void UART_sendDmxData (UINT8 txChar)
 */
 UINT8 UART_recvDmxData (void)
 {
-    return UxRXREG; // get data from UART RX FIFO
+    return U1RXREG; // get data from UART RX FIFO
 }
 
 /**
@@ -95,11 +95,11 @@ void UART_disableDmxRxIrq (void)
 
 /**
 @brief   check if DMX UART is idle
-@return   UINT8 "0" - busy, "1" - idle
+@return   BOOL "0" - busy, "1" - idle
 */
-UINT8 UART_isDmxUartIdle (void)
+BOOL UART_isDmxUartIdle (void)
 {
-    return UxSTAbits.TRMT;
+    return U1STAbits.TRMT;
 }
 
 /**
@@ -109,7 +109,7 @@ UINT8 UART_isDmxUartIdle (void)
 void UART_setDmxPortHigh (void)
 {
     // change DMX UART polarity to normal
-    UxSTAbits.UTXINV = 0;
+    U1STAbits.UTXINV = 0;
 }
 
 /**
@@ -119,7 +119,7 @@ void UART_setDmxPortHigh (void)
 void UART_setDmxPortLow (void)
 {
     // change DMX UART polarity to negative
-    UxSTAbits.UTXINV = 1;
+    U1STAbits.UTXINV = 1;
 }
 
 /**
@@ -131,52 +131,52 @@ void UART_disableDmxTimer (void)
     // disable timer
     T2CON = 0;
     // disable time interrupt
-    IEC0CLR = _IEC0_T2IE_MASK;	// Disable interrupt
+    IEC0CLR = _IEC0_T2IE_MASK | _IEC0_T3IE_MASK;	// Disable interrupt
     // clear flag
-    IFS0CLR = _IFS0_T2IF_MASK;
+    IFS0CLR = _IFS0_T2IF_MASK | _IFS0_T3IF_MASK;
 }
 
 /**
 @brief   check if there was receive DMX UART error
 @return   "1" - there was an error, "0" - no
 */
-UINT8 UART_isDmxRecvError (void)
+BOOL UART_isDmxRecvError (void)
 {
-    return (UxSTA & _U2STA_FERR_MASK);
+    return (U1STA & _U2STA_FERR_MASK);
 }
 
 /**
 @brief   check if a byte was received or in the process of receiving
 @return   "0" - no, else "1"
 */
-UINT8 UART_isDmxRecv (void)
+BOOL UART_isDmxRecv (void)
 {
-    return (UxSTA & (_U2STA_RIDLE_MASK | _U2STA_URXDA_MASK));
+    return (U1STA & (_U2STA_RIDLE_MASK | _U2STA_URXDA_MASK));
 }
 
 /**
 @brief   returns DMX timer status
 @return   "1" - timeout, "0" - no
 */
-UINT8 UART_isTimeOut (void)
+BOOL UART_isTimeOut (void)
 {
-    return IFS0bits.T2IF;
+    return IFS0 & (_IFS0_T2IF_MASK | _IFS0_T3IF_MASK);
 }
 
 /**
 @brief   enable DMX RX
 @return   none
 */
-void UART_enableDmxRx (UINT8 en_int)
+void UART_enableDmxRx (UINT en_int)
 {
     // dummy read
-    volatile UINT8 temp = UxRXREG;
+    volatile UINT8 temp = U1RXREG;
     // set DMX RX direction
     UART_setDmxRx();
     // clear OERR
-    UxSTAbits.OERR = 0;
+    U1STAbits.OERR = 0;
     // enable RX
-    UxSTAbits.URXEN = 1;
+    U1STAbits.URXEN = 1;
     if (en_int)
     {
         // enable RX IRQ
@@ -195,7 +195,7 @@ void UART_disableDmxRx (void)
     // set DMX TX direction
     UART_setDmxTx();
     // disable RX
-    UxSTAbits.URXEN = 0;
+    U1STAbits.URXEN = 0;
 }
 
 /**
@@ -214,31 +214,46 @@ void UART_initDmx (void)
         */
     #endif
     // UART 1 (DMX) - 8-bit, 250K, 2 stop bits
-    UxBRG = GetPeripheralClock() / 16 / DEFAULT_BAUDRATE - 1; // calculate actual BAUD generate value.
-    UxMODE = UART_EN | UART_2STOPBITS;
-    UxSTA = UART_RX_ENABLE | UART_TX_ENABLE;
+    U1BRG = GetPeripheralClock() / 16 / DEFAULT_BAUDRATE - 1; // calculate actual BAUD generate value.
+    U1MODE = UART_EN | UART_2STOPBITS;
+    U1STA = UART_RX_ENABLE | UART_TX_ENABLE;
+
+    IPC3SET = 0x00000005; // Timer 2/3 set priority level = 1
+    IPC6SET = 0x00000005; // UART1 set priority level = 1
 }
 
 /**
 @brief   check if DMX is idle
-@return   UINT8 "0" - busy, "1" - idle
+@return   BOOL "0" - busy, "1" - idle
 */
-UINT8 UART_isDmxIdle (void)
+BOOL UART_isDmxIdle (void)
 {
-    UINT8 res;
-    IEC0CLR = _IEC0_U1TXIE_MASK | _IEC0_U1RXIE_MASK | _IEC0_T2IE_MASK;	// Disable interrupt
-    res = UxSTAbits.TRMT && !IEC0bits.U1RXIE && !IEC0bits.U1TXIE && !IEC0bits.T2IE;
-    IEC0SET = _IEC0_U1TXIE_MASK | _IEC0_U1RXIE_MASK | _IEC0_T2IE_MASK;	// Disable interrupt
+    BOOL res;
+    __builtin_disable_interrupts();	// Disable interrupt
+    res = U1STAbits.TRMT && !(IEC0 & (_IEC0_U1RXIE_MASK | _IEC0_U1TXIE_MASK | _IEC0_T2IE_MASK | _IEC0_T3IE_MASK));
+    __builtin_enable_interrupts();	// Disable interrupt
     return res;
 }
 
-void __attribute((interrupt(ipl2), vector(_UART_1_VECTOR, _TIMER_2_VECTOR), nomips16)) _DmxInerrupt(void)
+void __ISR(_TIMER_3_VECTOR, ipl4) _DmxTimerInerrupt (void)
 {
-    if (IEC0bits.U1RXIE && (IFS0 & (_IFS0_U1RXIF_MASK || _IFS0_T2IF_MASK)))
+    if (IEC0bits.U1RXIE && (IFS0 & (_IFS0_U1RXIF_MASK | _IFS0_T2IF_MASK | _IFS0_T3IF_MASK)))
     {
         DMX_RX_ISR();
     }
-    else if ((IEC0bits.U1TXIE && IFS0bits.U1TXIF) || IFS0bits.T2IF)
+    else if ((IEC0bits.U1TXIE && IFS0bits.U1TXIF) || (IFS0 & (_IFS0_T2IF_MASK | _IFS0_T3IF_MASK)))
+    {
+        DMX_TX_ISR();
+    }
+}
+
+void __ISR(_UART_1_VECTOR, ipl4) _DmxUartInerrupt (void)
+{
+    if (IEC0bits.U1RXIE && (IFS0 & (_IFS0_U1RXIF_MASK | _IFS0_T2IF_MASK | _IFS0_T3IF_MASK)))
+    {
+        DMX_RX_ISR();
+    }
+    else if ((IEC0bits.U1TXIE && IFS0bits.U1TXIF) || (IFS0 & (_IFS0_T2IF_MASK | _IFS0_T3IF_MASK)))
     {
         DMX_TX_ISR();
     }
@@ -261,11 +276,16 @@ void __attribute((interrupt(ipl2), vector(_UART_1_VECTOR, _TIMER_2_VECTOR), nomi
 */
 void UART_setDmxTimer (UINT32 us)
 {
-    T2CON = _T2CON_ON_MASK | _T2CON_T32_MASK;
-    PR2 = us;
+    // stop timers
+    T2CON = 0;
+    T3CON = 0;
+    T2CONSET = _T2CON_T32_MASK;
     TMR2 = 0;
-    IFS0bits.T2IF = 0;
-    IEC0bits.T2IE = 1;
+    PR2 = us;
+
+    IFS0CLR = _IFS0_T2IF_MASK | _IFS0_T3IF_MASK;
+    IEC0bits.T3IE = 1;
+    T2CONSET = _T2CON_ON_MASK;
 }
 
 /***************************************End Of File*************************************/

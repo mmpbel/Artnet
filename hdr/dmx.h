@@ -115,12 +115,12 @@ typedef struct _GVAcmd_t
 extern void GVA_init(void);
 extern void GVA_handleCmd(GVAcmd_t *cmd);
 
-extern void DMX_sendAnswer(UINT8 *buf, UINT16 size);
+extern void DMX_sendAnswer(UINT8 *buf, UINT size);
 extern void DMX_stopTransfer(void);
 extern void DMX_RX_ISR(void);
 extern void DMX_TX_ISR(void);
-extern void DMX_sendRdm(UINT8 *buf, UINT16 size);
-extern UINT8 DMX_getChannel(UINT16 netAddr);
+extern void DMX_sendRdm(UINT8 *buf, UINT size);
+extern UINT DMX_getChannel(UINT16 netAddr);
 extern UINT8 * DMX_getBuf(void);
 extern void DMX_activateChannel(void);
 

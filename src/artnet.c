@@ -28,7 +28,7 @@ extern NODE_INFO remoteNode;
 
 static UDP_SOCKET ArtSocket;
 static ArtPack_t *ArtData;
-static UINT32 ArtSize = 0;
+static UINT ArtSize = 0;
 
 static const UINT8 ArtNetId[] = {'A', 'r', 't', '-', 'N', 'e', 't', 0x00};
 
@@ -38,11 +38,11 @@ static ArtPack_t artBuf;
 /**
 @brief  Check artnet packet ID.
 
-@return UINT8 0-error, 1-correct.
+@return BOOL 0-error, 1-correct.
 */
-static UINT8 checkPackId (UINT8 ID[])
+static BOOL checkPackId (UINT8 ID[])
 {
-    UINT8 i;
+    UINT i;
 
     for (i=0; i<sizeof(ArtNetId); i++)
     {
@@ -129,7 +129,7 @@ static void sendArtPollReply (ArtPollReplyPack_t *pkt)
 
 @return none.
 */
-static void sendArtRdm (ArtRdmPack_t *pkt, UINT16 size)
+static void sendArtRdm (ArtRdmPack_t *pkt, UINT size)
 {
     memset((UINT8*)pkt, 0, pkt->RdmPacket - pkt->ID);
 
@@ -152,7 +152,7 @@ static void sendArtRdm (ArtRdmPack_t *pkt, UINT16 size)
 
 @return none.
 */
-void ART_sendReply (UINT16 size)
+void ART_sendReply (UINT size)
 {
     sendArtRdm(&artBuf.rdm, size);
 }
@@ -162,7 +162,7 @@ void ART_sendReply (UINT16 size)
 
 @return none.
 */
-static void handleRdm (ArtRdmPack_t* pack, UINT16 size)
+static void handleRdm (ArtRdmPack_t* pack, UINT size)
 {
 #ifdef _DMX
     // handle RDM request
@@ -236,8 +236,8 @@ void ART_Task (void)
                 && (ARTNET_PROTO_LO == artBuf.poll.ProtVerLo)
                 )
             {
-                UINT32 size;
-                UINT8 ch;
+                UINT size;
+                UINT ch;
 #ifdef _DMX
                 // stop all DMX activity
                 DMX_stopTransfer();
