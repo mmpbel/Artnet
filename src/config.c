@@ -8,12 +8,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <plib.h>
 
 #include "main.h"
 #include "GenericTypeDefs.h"
 
 #include "config.h"
 #include "gva_dmx.h"
+
+//#if (CFG_NVM_STEP < sizeof(CFG_NVM_Entry_t))
+//    #error("CFG_NVM_STEP is too small. Increase it.")
+//#endif  // #if (sizeof(CFG_NVM_Entry_t) > CFG_NVM_STEP)
 
 #define CFG_FLASH_ADDR    0x200
 
@@ -45,59 +50,33 @@ const CFG_t defaultCfg LOCATION_1 =
     }
 } LOCATION_2;
 
-CFG_t cfg;
+//const UINT8 __attribute__((space(prog), address(CFG_FLASH_START_ADDR_0))) cfgBuf_1[CFG_NVM_BUF_SIZE];
+//const UINT8 __attribute__((space(prog), address(CFG_FLASH_START_ADDR_1))) cfgBuf_2[CFG_NVM_BUF_SIZE];
+
+CFG_NVM_Entry_t cfgNVMentry;
+CFG_t *cfg = &cfgNVMentry.data.cfg;
+
+UINT32 endWrAddr[2];
 
 UINT8 lenFrame;
 
-/**
-@brief  Read configuration
-@return   none
-*/
-void read (UINT addr, UINT8 *buf, UINT size)
-{
-    do
-    {
-        *buf++ = CPU_rdNVM(addr++);
-    }
-    while (--size);
-}
+const UINT32 NVM_addr[2] = {CFG_FLASH_START_ADDR_0, CFG_FLASH_START_ADDR_1};
 
 /**
 @brief  Get crc16
 @return   crc16
 */
-UINT16 CFG_crc16 (UINT src, UINT8 *buf,  UINT size)
+UINT16 CFG_crc16 (UINT8 *buf,  UINT size)
 {
     #define GEN 0xA001
 
     UINT16 rg = 0xFFFF; // The initial state of the shift register
-    UINT addr;
-
-    if (FLASH_1_SRC == src)
-    {
-        addr = CFG_FLASH_START_ADDR_1;
-    }
-    else if (FLASH_2_SRC == src)
-    {
-        addr = CFG_FLASH_START_ADDR_2;
-    }
 
     do
     {
         UINT j = 8;
-        if (RAM_SRC == src)
-        {
-            rg ^= *buf++;
-        }
-        else
-        {
-            UINT8 dt = CPU_rdNVM(addr++);
-            rg ^= dt;
-            if (buf)
-            {
-                *buf++ = dt;
-            }
-        }
+
+        rg ^= *buf++;
 
         do
         {
@@ -115,35 +94,95 @@ UINT16 CFG_crc16 (UINT src, UINT8 *buf,  UINT size)
     return rg;
 }
 
-static void write (UINT addr, UINT8 *buf, UINT size)
+UINT32 NVM_scan (UINT copyId)
 {
+    UINT32 startAddr;
+    UINT32 endAddr;
+    UINT32 *curAddr;
+    UINT32 midAddr;
+
+    startAddr = NVM_addr[copyId];
+    endAddr = startAddr + CFG_NVM_BUF_SIZE;
     do
     {
-        CPU_wrNVM(addr++, *buf++);
+        midAddr = ((startAddr >> 1) + (endAddr >> 1)) & ~(CFG_NVM_STEP - 1);
+        curAddr = (UINT32*)midAddr;
+        for (;;)
+        {
+            if (*curAddr != CFG_NVM_ERASED_PTRN)
+            {
+                startAddr = midAddr + CFG_NVM_STEP;
+                break;
+            }
+            ++curAddr;
+            if (!((UINT32)curAddr & (CFG_NVM_STEP - 1)))
+            {
+                endAddr = midAddr;
+                break;
+            }
+        };
+    } while (startAddr != endAddr);
+
+    endWrAddr[copyId] = startAddr;
+    while (startAddr > NVM_addr[copyId])
+    {
+        startAddr -= CFG_NVM_STEP;
+        if (!CFG_crc16((UINT8*)startAddr, sizeof(cfgNVMentry.data)))
+        {
+            return startAddr;
+        }
     }
-    while (--size);
+
+    return 0;
 }
 
 /**
-@brief  Write configuration from a buffer
+@brief  Save configuration into NVM
 @return   none
 */
-void CFG_writeBuf (UINT offs, UINT8 *buf, UINT size)
+
+static INT NVM_save (UINT copyId)
 {
-    memcpy((UINT8*)&cfg + offs, buf, size);
-//    write(CFG_FLASH_START_ADDR_1 + offs, buf, size);
-//    write(CFG_FLASH_START_ADDR_2 + offs, buf, size);
+    UINT32 *addr;
+    UINT32 *ptr;
+    UINT32 endAddr;
+
+    if (endWrAddr[copyId] >= (NVM_addr[copyId] + CFG_NVM_BUF_SIZE))
+    {
+       	if (0 != NVMErasePage((void*)NVM_addr[copyId]))
+        {
+            return 0;
+        }
+        endWrAddr[copyId] = NVM_addr[copyId];
+    }
+    addr = (UINT32*)endWrAddr[copyId];
+    ptr = cfgNVMentry.buf;
+    endAddr = (NVM_addr[copyId] + CFG_NVM_STEP);
+
+    do
+    {
+        NVMWriteWord((void*)addr, *ptr);
+
+        ++addr;
+        ++ptr;
+    }
+    while ((UINT32)addr < endAddr);
+    return 0;
 }
 
-/**
-@brief  Write configuration byte
-@return   none
-*/
-void CFG_writeByte (UINT offs, UINT8 val)
+INT CFG_updateNVM (void)
 {
-    ((UINT8*)&cfg)[offs] = val;
-    CPU_wrNVM(CFG_FLASH_START_ADDR_1 + offs, val);
-    CPU_wrNVM(CFG_FLASH_START_ADDR_2 + offs, val);
+    cfgNVMentry.data.magic = 0x1234;
+    ++cfgNVMentry.data.id;
+    cfgNVMentry.data.crc = CFG_crc16((UINT8*)&cfgNVMentry.data, sizeof(cfgNVMentry.data) - sizeof(cfgNVMentry.data.crc));
+    if (!NVM_save(0) || NVM_save(1))
+    {
+        return FALSE;
+    }
+    else
+    {
+        return TRUE;
+    }
 }
 
 /**
@@ -152,74 +191,45 @@ void CFG_writeByte (UINT offs, UINT8 val)
 */
 void CFG_init (void)
 {
-    // if CRC1 is ok,
-    if (!CFG_crc16(FLASH_1_SRC, (UINT8*)&cfg, sizeof(CFG_t) + sizeof(UINT16)))
+    UINT32 addr;
+    INT copyId;
+    INT goodMask = 0;
+
+    for (copyId=0; copyId<2; copyId++)
     {
-        // if the second is corrupted
-        if (CFG_crc16(FLASH_2_SRC, 0, sizeof(CFG_t) + sizeof(UINT16)))
+        addr = NVM_scan(copyId);
+        if (0 != addr)
         {
-            CFG_writeBuf(CFG_FLASH_START_ADDR_2, (UINT8*)&cfg, sizeof(cfg));
-            CFG_updateCRC();
+            // copy the latest version
+            memcpy(&cfgNVMentry.data.cfg, &(((CFG_NVM_Entry_t*)addr)->data.cfg), sizeof(cfgNVMentry.data.cfg));
+            goodMask |= (1 << copyId);
         }
     }
-    else
+    if (0 == goodMask)
     {
-        // if CRC2 is ok,
-        if (!CFG_crc16(FLASH_2_SRC, (UINT8*)&cfg, sizeof(CFG_t) + sizeof(UINT16)))
-        {
-            CFG_writeBuf(CFG_FLASH_START_ADDR_1, (UINT8*)&cfg, sizeof(cfg));
-            CFG_updateCRC();
-        }
-        else  //обе области запорчены,
-        {
-            UINT i;
-            // set default configuration
-            memcpy(&cfg, (void*)&defaultCfg, sizeof(CFG_t));
-            CFG_writeBuf(CFG_FLASH_START_ADDR_1, (UINT8*)&cfg, sizeof(cfg));
-            CFG_writeBuf(CFG_FLASH_START_ADDR_2, (UINT8*)&cfg, sizeof(cfg));
-            CFG_updateCRC();
+        memcpy(&cfgNVMentry.data.cfg, &defaultCfg, sizeof(cfgNVMentry.data.cfg));
+    }
 
-            // Значения цвета по умолчанию
-            for (i=0; i < MaxDataSz; i++)
-            {
-                CPU_wrNVM(prmDefColors+i, 0);
-            }
+    cfgNVMentry.data.magic = 0x1234;
+    ++cfgNVMentry.data.id;
+    cfgNVMentry.data.crc = CFG_crc16((UINT8*)&cfgNVMentry.data, sizeof(cfgNVMentry.data) - sizeof(cfgNVMentry.data.crc));
 
-            CPU_wrNVM(cntErrReIni, CPU_rdNVM(cntErrReIni) + 1);
+    for (copyId=0; copyId<2; copyId++)
+    {
+        if (!(goodMask & (1 << copyId)))
+        {
+            // restore bad copy
+            NVM_save(copyId);
         }
     }
 
-    lenFrame = cfg.dmx.numPix * nLayers;   //длина фрейма
-}
-
-/**
-@brief  update configuration CRC
-@return  none
-*/
-UINT8 CFG_updateCRC (void)
-{
     UINT i;
-    UINT fCRCbad;
-    UINT16 crc;
-
-    crc = CFG_crc16(RAM_SRC, (UINT8*)&cfg, sizeof(cfg));
-
-    write(CFG_FLASH_START_ADDR_1 + sizeof(cfg), (UINT8*)&crc, sizeof(crc));
-    write(CFG_FLASH_START_ADDR_2 + sizeof(cfg), (UINT8*)&crc, sizeof(crc));
-
-    fCRCbad = 0;
-
-    for (i=0; i < sizeof(cfg); i++)
+    for (i=0; i < MaxDataSz; i++)
     {
-        if (((UINT8*)&cfg)[i] != CPU_rdNVM(CFG_FLASH_START_ADDR_1 + i))
-        {
-            fCRCbad |= (1<<1);
-        }
-        if (((UINT8*)&cfg)[i] != CPU_rdNVM(CFG_FLASH_START_ADDR_2 + i))
-        {
-            fCRCbad |= (1<<2);
-        }
+        CPU_wrNVM(prmDefColors+i, 0);
     }
+    CPU_wrNVM(cntErrReIni, CPU_rdNVM(cntErrReIni) + 1);
 
-    return !fCRCbad;
+    lenFrame = cfg->dmx.numPix * nLayers;   //ДКХМЮ ТПЕИЛЮ
 }
+

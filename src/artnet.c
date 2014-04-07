@@ -11,9 +11,9 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "GenericTypeDefs.h"
 #include "main.h"
 
-#include "GenericTypeDefs.h"
 #include "TCPIPConfig.h"
 #include "TCPIP Stack/TCPIP.h"
 

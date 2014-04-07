@@ -21,7 +21,7 @@
 #ifndef _MAINDEMO_H
 #define _MAINDEMO_H
 
-#define CPU_rdNVM(x)    0
+#define CPU_rdNVM(addr)    (*(BYTE*)(addr))
 #define CPU_wrNVM(x, y)
 
 #define strVersion "v0.0 ArtNet2Dmx"
@@ -36,6 +36,9 @@
 void PING_Task(void);
 void ART_Task(void);
 void DMX_Task(void);
+
+void CFG_init(void);
+INT CFG_updateNVM(void);
 
 void DMX_init(void);
 

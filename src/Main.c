@@ -71,6 +71,8 @@ int main(void)
     // application modules (HTTP, SNMP, etc.)
     StackInit();
 
+    CFG_init();
+
 #ifdef _DMX
     DMX_init();
 #endif

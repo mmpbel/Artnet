@@ -1,4 +1,3 @@
-
 /*
  * File:   dmx.c
  * Author: Mikhail.Palityka
@@ -11,8 +10,8 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "main.h"
 #include "GenericTypeDefs.h"
+#include "main.h"
 #include "HardwareProfile.h"
 #include "TCPIP Stack/Tick.h"
 

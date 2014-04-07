@@ -26,6 +26,7 @@ typedef struct _CFG_Dmx_t
     UINT8 polarity;
     UINT8 failLevel;
     UINT8 failTime;
+    UINT8 align1[1];    // make 32 bit aligned
 } CFG_Dmx_t;
 
 typedef struct _CFG_t
@@ -36,15 +37,32 @@ typedef struct _CFG_t
     CFG_Dmx_t dmx;
 } CFG_t;
 
-extern CFG_t cfg;
+typedef union _CFG_NVM_Entry_t
+{
+    struct
+    {
+        UINT16 magic;
+        UINT16 id;
+        CFG_t cfg;
+        UINT8 align2[2];    // make 32 bit aligned
+        UINT16 crc;
+    } data;
+    UINT32 buf[8];
+} CFG_NVM_Entry_t;
+
+extern CFG_t *cfg;
 extern volatile UINT32 UID;
 extern UINT8 lenFrame;
 
-#define CFG_FLASH_START_ADDR_1  0
-#define CFG_FLASH_START_ADDR_2  (CFG_FLASH_START_ADDR_1 + sizeof(CFG_t) + sizeof(UINT16))
-#define CFG_DMX_OFFSET(x)        ((UINT16)(UINT32)&(((CFG_t*)0)->dmx.x))
+#define CFG_FLASH_START_ADDR_0  0xbd070000
+#define CFG_FLASH_START_ADDR_1  0xbd071000
 
-UINT16 CFG_crc16(UINT src, UINT8 *buf,  UINT size);
+#define CFG_NVM_STEP    (1<<5)  // 32
+#define CFG_NVM_BUF_SIZE    (1<<12)   // 4096
+#define CFG_NVM_ERASED_PTRN    0xFFFFFFFF
+
+
+UINT16 CFG_crc16(UINT8 *buf,  UINT size);
 
 enum
 {
@@ -53,7 +71,7 @@ enum
     FLASH_2_SRC
 };
 
-#define prmDefColors (CFG_FLASH_START_ADDR_2 + sizeof(CFG_t) + sizeof(UINT16))
+#define prmDefColors (CFG_FLASH_START_ADDR_1 + sizeof(CFG_t) + sizeof(UINT16))
 
 #define cntErrWDT       0x80
 #define cntErrReIni     (cntErrWDT + 1)
